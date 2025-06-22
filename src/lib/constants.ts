@@ -1,5 +1,5 @@
 export const itemsMenu = [
-  { label: "Code", value: "code" },
+  { label: "Code", value: "itemCode" },
   { label: "Status", value: "status" },
   { label: "Name En. ", value: "nameEn " },
   { label: "Name Ar. ", value: "nameAr" },
@@ -9,7 +9,7 @@ export const itemsMenu = [
   { label: "Barcode  ", value: "barcode  " },
 ];
 export const vendorsMenu = [
-  { label: "Code", value: "code" },
+  { label: "Code", value: "vendorCode" },
   { label: "Status", value: "status" },
   { label: "Name En. ", value: "nameEn " },
   { label: "Name Ar. ", value: "nameAr" },
@@ -17,33 +17,80 @@ export const vendorsMenu = [
 
 ];
 export const wasteMenu = [
-  { label: "Code", value: "code" },
-  { label: "Document Date", value: "documentDate" },
+  { label: "Code", value: "wasteNumber" },
+  { label: "Document Date", value: "docDate" },
 
 ];
 export const stockMenu = [
   { label: "Code", value: "code" },
   { label: "Warehouse", value: "warehouse" },
   { label: "Status", value: "status" },
-  { label: "Document Date", value: "documentDate" },
+  { label: "Document Date", value: "docDate" },
 
 ];
 export const purschaseMenu = [
-  { label: "Code", value: "code" },
+  { label: "Code", value: "poNumber" },
   { label: "Status", value: "status" },
-  { label: "Vendor", value: "vendor" },
-  { label: "Document Date", value: "documentDate" },
-  { label: "Delivery date", value: "deliveryDate" },
-  { label: "Total amount ", value: "totalAmount " },
-
+  { label: "Vendor", value: "vendorCode" },
+  { label: "Document Date", value: "docDate" },
+  { label: "Delivery date", value: "docDueDate" },
 ];
-export const transferMenu = [
-  { label: "Code", value: "code" },
+export const grpoMenu = [
+  { label: "Code", value: "grpoNumber" },
+  { label: "Status", value: "status" },
+  { label: "Vendor", value: "vendorCode" },
+  { label: "Document Date", value: "docDate" },
+  { label: "Delivery date", value: "docDueDate" },
+];
+export const returnMenu = [
+  { label: "Code", value: "returnNumber" },
+  { label: "Status", value: "status" },
+  { label: "Vendor", value: "vendorCode" },
+  { label: "Document Date", value: "docDate" },
+  { label: "Delivery date", value: "docDueDate" },
+];
+export const returnRequestMenu = [
+  { label: "Code", value: "returnRequestNumber" },
+  { label: "Status", value: "status" },
+  { label: "Vendor", value: "vendorCode" },
+  { label: "Document Date", value: "docDate" },
+  { label: "Delivery date", value: "docDueDate" },
+];
+
+export const whsTransferRequestMenu = [
+  { label: "Code", value: "transferNumber" },
   { label: "Status", value: "status" },
   { label: "To", value: "to" },
   { label: "From", value: "from" },
-  { label: "Delivery date", value: "deliveryDate" },
-  { label: "Document Date", value: "documentDate" },
+  { label: "Delivery date", value: "docDueDate" },
+  { label: "Document Date", value: "docDate" },
+
+];
+export const siteTransferRequestMenu = [
+  { label: "Code", value: "site_transfer_request_number" },
+  { label: "Status", value: "status" },
+  { label: "To", value: "to" },
+  { label: "From", value: "from" },
+  { label: "Delivery date", value: "docDueDate" },
+  { label: "Document Date", value: "docDate" },
+
+];
+export const whsTransferFinalMenu = [
+  { label: "Code", value: "transferHandheldNumber" },
+  { label: "Status", value: "status" },
+  { label: "To", value: "to" },
+  { label: "From", value: "from" },
+  { label: "Delivery date", value: "docDueDate" },
+  { label: "Document Date", value: "docDate" },
+
+];
+export const siteTransferFinalMenu = [
+  { label: "Code", value: "site_transfer_number" },
+  { label: "Status", value: "status" },
+  { label: "To", value: "to" },
+  { label: "From", value: "from" },
+  { label: "Delivery date", value: "docDueDate" },
+  { label: "Document Date", value: "docDate" },
 
 ];
 

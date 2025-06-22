@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getWasteDetails, putWaste } from "@/api/client";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import {
+  getWasteDetails,
+  postCancelWaste,
+  postCloseWaste,
+  putWaste,
+} from "@/api/client";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,17 +37,10 @@ import { Link, useParams } from "react-router-dom";
 
 const WasteDetails = () => {
   const { id } = useParams();
-  const { setError } = useStateContext();
+  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
   const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<Waste["waste_lines"][0][]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
+
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditWasteRequest>({
     resolver: zodResolver(EditWasteSchema),
@@ -98,6 +95,9 @@ const WasteDetails = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -113,6 +113,79 @@ const WasteDetails = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+  });
+  const { mutate: cancelWaste, isPending: isCancelling } = useMutation({
+    mutationFn: () => postCancelWaste(`/waste/cancel/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wasteDetails"] });
+      form.reset();
+      setDialogConfig({
+        title: "Waste canceled successfully!",
+        description: "Your waste is successfully canceled ",
+        icon: faSquareCheck,
+        iconColor: "text-Success-600",
+        variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error.message === "Network Error"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.details || "An error occurred";
+      form.setError("root", { message: errorMessage });
+      setDialogConfig({
+        title: "Waste not updated",
+        description: errorMessage,
+        icon: faSquareExclamation,
+        iconColor: "text-Error-600",
+        variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+  });
+  const { mutate: closeWaste, isPending: isClosing } = useMutation({
+    mutationFn: () => postCloseWaste(`/waste/close/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wasteDetails"] });
+      setDialogConfig({
+        title: "Waste Closed successfully!",
+        description: "Your Waste is successfully closed ",
+        icon: faSquareCheck,
+        iconColor: "text-Success-600",
+        variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error.message === "Network Error"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.details || "An error occurred";
+      setDialogConfig({
+        title: "Waste not updated",
+        description: errorMessage,
+        icon: faSquareExclamation,
+        iconColor: "text-Error-600",
+        variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -202,6 +275,20 @@ const WasteDetails = () => {
                           format(new Date(wasteDetails.document_date), "PP")}
                       </span>
                     </div>
+                    <div className="space-y-1  ">
+                      <Label
+                        className={`${
+                          isEdit ? "text-Gray-300" : "text-Gray-500"
+                        } ml-2 font-bold text-sm leading-CS h-[1.1875rem]`}>
+                        Status
+                      </Label>
+                      <span
+                        className={`${
+                          isEdit ? "bg-Gray-50 text-Gray-300" : "text-Gray-500"
+                        } p-2 rounded-CS border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10`}>
+                        {wasteDetails?.status}
+                      </span>
+                    </div>
                   </div>
                   <div className=" w-1/3 space-y-4">
                     <FormField
@@ -239,6 +326,7 @@ const WasteDetails = () => {
                         <th className="pr-6 pl-4 py-3">UOM</th>
                         <th className="pr-6 pl-4 py-3">Reason</th>
                         <th className="pr-6 pl-4 py-3">Quantity</th>
+                        <th className="pr-6 pl-4 py-3">Status</th>
                         <th className="pr-6 pl-4 py-3 rounded-tr-xl">Remove</th>
                       </tr>
                     </thead>
@@ -277,7 +365,7 @@ const WasteDetails = () => {
                               value={item.quantity}
                               step="0.25"
                               type="number"
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               key={item.line_number}
                               onChange={(e) => {
                                 updateLineQuantity(
@@ -288,6 +376,7 @@ const WasteDetails = () => {
                               className="w-[5rem] p-0 h-1/2 border-0 text-center rounded-lg"
                             />
                           </td>
+                          <td className="pr-6 pl-4 py-3">{item.line_status}</td>
                           <td className="pr-6 pl-4 py-3">
                             <Button
                               disabled={!isEdit}
@@ -336,7 +425,8 @@ const WasteDetails = () => {
                         Created at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                       {wasteDetails?.create_at &&
+                          format(new Date(wasteDetails.create_at), "PP")}
                       </span>
                     </div>
                   </div>
@@ -354,7 +444,8 @@ const WasteDetails = () => {
                         Edited at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {wasteDetails?.update_at &&
+                          format(new Date(wasteDetails.update_at), "PP")}
                       </span>
                     </div>
                   </div>
@@ -366,9 +457,42 @@ const WasteDetails = () => {
             {!isEdit ? (
               <>
                 <Button
-                  disabled={isFetching}
+                  disabled={isFetching || isClosing || isCancelling}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Cancel Waste",
+                      description:
+                        "Are you sure you want to cancel this Waste? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "danger",
+                      type: "Confirmation",
+                      confirm: () => cancelWaste(),
+                      confirmText: "Cancel Waste",
+                    });
+                  }}
                   className=" bg-transparent w-[10rem] rounded-2xl font-bold text-Error-600 border border-Secondary-500  ">
                   Cancel Waste
+                </Button>
+                <Button
+                  disabled={isFetching || isClosing || isCancelling}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Close Waste",
+                      description:
+                        "Are you sure you want to close this Waste? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "danger",
+                      type: "Confirmation",
+                      confirm: () => closeWaste(),
+                      confirmText: "Close Waste",
+                    });
+                  }}
+                  className=" bg-transparent w-[10rem] rounded-2xl text-Primary-500  border border-Secondary-500 font-bold ">
+                  Close Transfer
                 </Button>
                 <Button
                   disabled={isFetching}
@@ -397,7 +521,19 @@ const WasteDetails = () => {
                 <Button
                   disabled={isPending}
                   type="submit"
-                  onClick={form.handleSubmit(onSubmit)}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Edit Waste",
+                      description: "Are you sure you want to edit this Waste? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "info",
+                      type: "Confirmation",
+                      confirm: () => form.handleSubmit(onSubmit)(),
+                      confirmText: "Save",
+                    });
+                  }}
                   className="  rounded-2xl w-[10rem]">
                   {isPending && (
                     <FontAwesomeIcon className="" icon={faSpinner} spin />
@@ -409,18 +545,6 @@ const WasteDetails = () => {
           </div>
         </div>
       </div>
-      <ConfirmationDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        title={dialogConfig.title}
-        description={dialogConfig.description}
-        icon={dialogConfig.icon}
-        iconColor={dialogConfig.iconColor}
-        confirmText="OK"
-        type="Info"
-        onConfirm={() => setDialogOpen(false)}
-        variant={dialogConfig.variant}
-      />
     </Form>
   );
 };

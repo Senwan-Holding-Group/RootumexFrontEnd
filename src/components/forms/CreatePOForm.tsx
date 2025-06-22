@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import ConfirmationDialog from "../ConfirmationDialog";
 import { Button } from "../ui/button";
 import { DialogClose } from "../ui/dialog";
 import {
@@ -41,19 +40,14 @@ import { Dependencies, Docline } from "@/lib/types";
 import { Calendar } from "../calendar";
 import { Label } from "../ui/label";
 import ItemSelect from "../ItemsSelect";
+import { useStateContext } from "@/context/useStateContext";
 
 const CreatePOForm = () => {
   const queryClient = useQueryClient();
+  const {  setDialogOpen, setDialogConfig } =
+    useStateContext();
   const dependencies = useOutletContext<Dependencies>();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
 
   const form = useForm<CreatePORequest>({
     resolver: zodResolver(CreatePOSchema),
@@ -81,6 +75,9 @@ const CreatePOForm = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -96,6 +93,9 @@ const CreatePOForm = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -469,18 +469,7 @@ const CreatePOForm = () => {
             Confirm
           </Button>
         </div>
-        <ConfirmationDialog
-          isOpen={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          title={dialogConfig.title}
-          description={dialogConfig.description}
-          icon={dialogConfig.icon}
-          iconColor={dialogConfig.iconColor}
-          confirmText="OK"
-          type="Info"
-          onConfirm={() => setDialogOpen(false)}
-          variant={dialogConfig.variant}
-        />
+      
       </form>
     </Form>
   );

@@ -1,41 +1,59 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { postReturn } from "@/api/client";
-import { CreatePORequest, CreateReturnRequest, CreateReturnSchema } from "@/lib/formsValidation";
+import {
+  CreatePORequest,
+  CreateReturnRequest,
+  CreateReturnSchema,
+} from "@/lib/formsValidation";
 import { Dependencies, Docline } from "@/lib/types";
 import { calculateLineTotal, cn, numberWithCommas } from "@/lib/utils";
-import { faCalendarCirclePlus, faSpinner, faSquareCheck, faSquareExclamation, faTrashCan } from "@fortawesome/pro-regular-svg-icons";
+import {
+  faCalendarCirclePlus,
+  faSpinner,
+  faSquareCheck,
+  faSquareExclamation,
+  faTrashCan,
+} from "@fortawesome/pro-regular-svg-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useOutletContext } from "react-router-dom";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
 import Loader from "../ui/Loader";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Calendar } from "../calendar";
 import { Input } from "../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { Label } from "../ui/label";
 import ItemSelect from "../ItemsSelect";
 import { DialogClose } from "../ui/dialog";
-import ConfirmationDialog from "../ConfirmationDialog";
+import { useStateContext } from "@/context/useStateContext";
+import { useAuth } from "@/api/Auth/useAuth";
 
 const CreateReturnForm = () => {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
+  const { setDialogOpen, setDialogConfig } = useStateContext();
+  const { user } = useAuth();
+
   const dependencies = useOutletContext<Dependencies>();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
-
   const form = useForm<CreateReturnRequest>({
     resolver: zodResolver(CreateReturnSchema),
     defaultValues: {
@@ -43,7 +61,7 @@ const CreateReturnForm = () => {
       vendorName: "",
       vendorInvoiceNumber: "",
       projectCode: "",
-      warehouseCode: "",
+      warehouseCode: user.warehouse_code,
       remark: "",
       docDate: new Date(),
       docDueDate: new Date(),
@@ -51,7 +69,8 @@ const CreateReturnForm = () => {
     },
   });
   const { mutate: createReturn, isPending } = useMutation({
-    mutationFn: (data: CreateReturnRequest) => postReturn("/return_request", data),
+    mutationFn: (data: CreateReturnRequest) =>
+      postReturn("/return_request", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["returnList"] });
       form.reset();
@@ -62,6 +81,9 @@ const CreateReturnForm = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -77,6 +99,9 @@ const CreateReturnForm = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -297,6 +322,25 @@ const CreateReturnForm = () => {
                       <FormMessage />
                     </FormLabel>
                     <FormControl>
+                      <Input
+                        disabled={true}
+                        {...field}
+                        className="border w-full inline-flex disabled:bg-Gray-50 disabled:text-Gray-500 border-Secondary-500 font-medium text-base leading-CS"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              {/* <FormField
+                control={form.control}
+                name="warehouseCode"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-Gray-500   ml-2 font-bold text-sm leading-CS h-[1.1875rem]">
+                      Warehouse
+                      <FormMessage />
+                    </FormLabel>
+                    <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
@@ -317,7 +361,7 @@ const CreateReturnForm = () => {
                     </FormControl>
                   </FormItem>
                 )}
-              />
+              /> */}
             </div>
             <div className="w-1/3 space-y-4">
               <FormField
@@ -450,22 +494,9 @@ const CreateReturnForm = () => {
             Confirm
           </Button>
         </div>
-        <ConfirmationDialog
-          isOpen={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          title={dialogConfig.title}
-          description={dialogConfig.description}
-          icon={dialogConfig.icon}
-          iconColor={dialogConfig.iconColor}
-          confirmText="OK"
-          type="Info"
-          onConfirm={() => setDialogOpen(false)}
-          variant={dialogConfig.variant}
-        />
       </form>
     </Form>
   );
-  
-}
+};
 
-export default CreateReturnForm
+export default CreateReturnForm;

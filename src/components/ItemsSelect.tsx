@@ -31,52 +31,56 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
     searchKey: itemsMenu[0].value,
     searchValue: "",
   });
-  const handleItemClick = (item:Item) => {
-  const existingItemIndex = state.findIndex(
-    (value) => String(value.itemCode) === item.itemCode
-  );
+  const handleItemClick = (item: Item) => {
+    const existingItemIndex = state.findIndex(
+      (value) => String(value.itemCode) === item.itemCode && value.status === "O"
+    );
 
-  if (existingItemIndex !== -1) {
-    setState((prev) => {
-      const newState = [...prev];
-      newState[existingItemIndex] = {
-        ...newState[existingItemIndex],
-        quantity: newState[existingItemIndex].quantity + 1,
-        total_price: (newState[existingItemIndex].quantity + 1) * newState[existingItemIndex].price
-      };
-      return newState;
-    });
-  } else {
-    setState((prev) => [
-      ...prev,
-      {
-        itemDescription: item.itemDescription,
-        description: item.itemDescription,
-        itemCode: item.itemCode,
-        barcode: item.barcode,
-        name: item.itemName,
-        uom: item.uom,
-        uomCode: item.uom,
-        total_price: item.price,
-        recieved_quantity: 0,
-        quantity: 1,
-        price: item.price,
-        line: Math.random(),
-      },
-    ]);
-  }
-};
+    if (existingItemIndex !== -1) {
+      setState((prev) => {
+        const newState = [...prev];
+        newState[existingItemIndex] = {
+          ...newState[existingItemIndex],
+          quantity: newState[existingItemIndex].quantity + 1,
+          total_price:
+            (newState[existingItemIndex].quantity + 1) *
+            newState[existingItemIndex].price,
+        };
+        return newState;
+      });
+    } else {
+      setState((prev) => [
+        ...prev,
+        {
+          itemDescription: item.itemDescription,
+          description: item.itemDescription,
+          itemCode: item.itemCode,
+          barcode: item.barcode,
+          name: item.itemName,
+          uom: item.uom,
+          uomCode: item.uom,
+          total_price: item.price,
+          recieved_quantity: 0,
+          quantity: 1,
+          status: "O",
+          price: item.price,
+          line: Math.random(),
+        },
+      ]);
+    }
+  };
   const {
-    data: itemList,
+    data: itemSelectList,
     isFetching,
     isError,
   } = useQuery({
-    queryKey: ["itemList", search],
-    queryFn: () =>
-      getItemsMasterData(
-        `/item?${search.searchKey}=${search.searchValue}`,
-        setError
-      ),
+    queryKey: ["itemSelectList", search],
+    queryFn: () => {
+      const searchParam = search.searchValue
+        ? `?${search.searchKey}=${search.searchValue}`
+        : "";
+     return getItemsMasterData(`/item${searchParam}`, setError);
+    },
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
@@ -120,11 +124,10 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
                   </tr>
                 </thead>
                 <tbody className=" [&_tr:last-child]:border-0">
-                  {itemList?.map((item) => (
+                  {itemSelectList?.map((item) => (
                     <tr
                       key={item.itemCode}
-                       onClick={() => handleItemClick(item)}
-
+                      onClick={() => handleItemClick(item)}
                       className={`text-RT-Black font-normal text-base border-b border-Primary-15  cursor-pointer ${
                         state.find(
                           (value) => String(value.itemCode) === item.itemCode

@@ -6,13 +6,17 @@ import {
   CreateItemRequest,
   CreatePORequest,
   CreateReturnRequest,
+  CreateStockCount,
   CreateTransferRequest,
+  CreateVendorRequest,
   EditGRPORequest,
   EditItemRequest,
   EditPORequest,
   EditReturnRequest,
+  EditStockCountRequest,
   EditTransferFLRequest,
   EditTransferRequest,
+  EditVendorRequest,
   EditWasteRequest,
   LoginRequest,
 } from "@/lib/formsValidation";
@@ -22,9 +26,12 @@ import {
   Item,
   PO,
   Return,
+  StockCount,
   Vendor,
   Waste,
   WhsTransfer,
+  ZoneDashboard,
+  ZoneItem,
 } from "@/lib/types";
 
 export const login = async (
@@ -34,9 +41,9 @@ export const login = async (
   form: UseFormReturn<LoginRequest>
 ) => {
   try {
-    const res = await api.post("/auth/login", data);
-    setToken(res.data.token);
-    secureLocalStorage.setItem("token", res.data.token);
+    const res = await api.post("/login", data);
+    setToken(res.data.access_token);
+    secureLocalStorage.setItem("token", res.data.access_token);
     navigate("/rootumex/dashboard", { replace: true });
   } catch (error: any) {
     if (error.message === "Network Error") {
@@ -45,7 +52,7 @@ export const login = async (
       });
     } else {
       form.setError("root", {
-        message: error.response.data.message,
+        message: error.response.data.details,
       });
     }
 
@@ -190,6 +197,15 @@ export const putPO = async (url: string, data: EditPORequest) => {
     throw error;
   }
 };
+export const postCancelPO = async (url: string) => {
+  try {
+    const res = await api.post(url);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
 //GRPO
 export const getGRPO = async (
   url: string,
@@ -286,6 +302,15 @@ export const getReturnDetails = async (
 export const postReturn = async (url: string, data: CreateReturnRequest) => {
   try {
     const res = await api.post(url, data);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+export const postCancelReturn = async (url: string) => {
+  try {
+    const res = await api.post(url);
     return res.data;
   } catch (error: any) {
     console.log(error);
@@ -393,6 +418,24 @@ export const getWasteDetails = async (
     console.log(error);
   }
 };
+export const postCancelWaste = async (url: string) => {
+  try {
+    const res = await api.post(url);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+export const postCloseWaste = async (url: string) => {
+  try {
+    const res = await api.post(url);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
 export const putWaste = async (url: string, data: EditWasteRequest) => {
   try {
     const res = await api.patch(url, data);
@@ -445,6 +488,17 @@ export const postTransfer = async (
 ) => {
   try {
     const res = await api.post(url, data);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+export const postCancelTransfer = async (
+  url: string
+) => {
+  try {
+    const res = await api.post(url);
     return res.data;
   } catch (error: any) {
     console.log(error);
@@ -528,6 +582,158 @@ export const getVendors = async (
     const res = await api.get(url);
     setTotalPage(res.data.meta.total_pages);
     return res.data.data as Vendor[];
+  } catch (error: any) {
+    console.log(error);
+    if (error.message === "Network Error") {
+      setError("Something went wrong check your connection");
+    } else {
+      setError(error.response.data.details);
+    }
+    console.log(error);
+  }
+};
+export const getVendorDetails = async (
+  url: string,
+  setError: React.Dispatch<React.SetStateAction<string | undefined>>
+) => {
+  try {
+    const res = await api.get(url);
+    return res.data.data[0] as Vendor;
+  } catch (error: any) {
+    console.log(error);
+    if (error.message === "Network Error") {
+      setError("Something went wrong check your connection");
+    } else {
+      setError(error.response.data.details);
+    }
+    console.log(error);
+  }
+};
+export const putVendor = async (
+  url: string,
+  data: EditVendorRequest
+) => {
+  try {
+    const res = await api.patch(url,data);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+export const postVendor = async (url: string, data: CreateVendorRequest) => {
+ 
+  try {
+    const res = await api.post(url, data);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+//Stock Count
+export const getStockCount = async (
+  url: string,
+  setError: React.Dispatch<React.SetStateAction<string | undefined>>,
+  setTotalPage?: React.Dispatch<React.SetStateAction<number>>
+) => {
+  try {
+    const res = await api.get(url);
+    if (setTotalPage) {
+      setTotalPage(res.data.meta.total_pages);
+    }
+    return res.data.data as StockCount[];
+  } catch (error: any) {
+    console.log(error);
+    if (error.message === "Network Error") {
+      setError("Something went wrong check your connection");
+    } else {
+      setError(error.response.data.details);
+    }
+    console.log(error);
+  }
+};
+export const getStockCountDetails = async (
+  url: string,
+  setError: React.Dispatch<React.SetStateAction<string | undefined>>
+) => {
+  try {
+    const res = await api.get(url);
+    return res.data as StockCount;
+  } catch (error: any) {
+    console.log(error);
+    if (error.message === "Network Error") {
+      setError("Something went wrong check your connection");
+    } else {
+      setError(error.response.data.details);
+    }
+    console.log(error);
+  }
+};
+export const postStockCount = async (url: string, data: CreateStockCount) => {
+ 
+  try {
+    const res = await api.post(url, data);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+export const postCloseStockCount = async (url: string) => {
+ 
+  try {
+    const res = await api.post(url);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+export const postCancelStockCount = async (url: string) => {
+ 
+  try {
+    const res = await api.post(url);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+export const putStockCount = async (url: string, data: EditStockCountRequest) => {
+  try {
+    const res = await api.patch(url, data);
+    return res.data;
+  } catch (error: any) {
+    console.log(error);
+    throw error;
+  }
+};
+//Zones
+export const getZoneDashboard = async (
+  url: string,
+  setError: React.Dispatch<React.SetStateAction<string | undefined>>,
+) => {
+  try {
+    const res = await api.get(url);
+    return res.data as ZoneDashboard;
+  } catch (error: any) {
+    console.log(error);
+    if (error.message === "Network Error") {
+      setError("Something went wrong check your connection");
+    } else {
+      setError(error.response.data.details);
+    }
+    console.log(error);
+  }
+};
+export const getZoneDetails = async (
+  url: string,
+  setError: React.Dispatch<React.SetStateAction<string | undefined>>
+) => {
+  try {
+    const res = await api.get(url);
+    return res.data as ZoneItem[];
   } catch (error: any) {
     console.log(error);
     if (error.message === "Network Error") {

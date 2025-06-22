@@ -43,26 +43,21 @@ import {
 import { Label } from "../ui/label";
 import ItemSelect from "../ItemsSelect";
 import { DialogClose } from "../ui/dialog";
-import ConfirmationDialog from "../ConfirmationDialog";
 import { TransferProps } from "@/Documents/Requests/Warehouse Transfer/CreateTransfer";
+import { useStateContext } from "@/context/useStateContext";
+import { useAuth } from "@/api/Auth/useAuth";
 
-const CreateTransferForm = ({type}:TransferProps) => {
+const CreateTransferForm = ({ type }: TransferProps) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const dependencies = useOutletContext<Dependencies>();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
+  const { setDialogOpen, setDialogConfig } = useStateContext();
 
   const form = useForm<CreateTransferRequest>({
     resolver: zodResolver(CreateTransferSchema),
     defaultValues: {
-      from: "",
+      from: user.warehouse_code,
       to: "",
       remark: "",
       docDate: new Date(),
@@ -72,9 +67,14 @@ const CreateTransferForm = ({type}:TransferProps) => {
   });
   const { mutate: createTransfer, isPending } = useMutation({
     mutationFn: (data: CreateTransferRequest) =>
-      postTransfer(`${type==="WHS"?"/transfer":"/site_transfer_request"}`, data),
+      postTransfer(
+        `${type === "WHS" ? "/transfer" : "/site_transfer_request"}`,
+        data
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`${type==="WHS"?"transfer":"siteTransfer"}List`] });
+      queryClient.invalidateQueries({
+        queryKey: [`${type === "WHS" ? "transfer" : "siteTransfer"}List`],
+      });
       form.reset();
       setdocLine([]);
       setDialogConfig({
@@ -83,6 +83,9 @@ const CreateTransferForm = ({type}:TransferProps) => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -98,6 +101,9 @@ const CreateTransferForm = ({type}:TransferProps) => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -237,6 +243,25 @@ const CreateTransferForm = ({type}:TransferProps) => {
                       <FormMessage />
                     </FormLabel>
                     <FormControl>
+                      <Input
+                        disabled={true}
+                        {...field}
+                        className="border w-full inline-flex disabled:bg-Gray-50 disabled:text-Gray-500 border-Secondary-500 font-medium text-base leading-CS"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              {/* <FormField
+                control={form.control}
+                name="from"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-Gray-500   ml-2 font-bold text-sm leading-CS h-[1.1875rem]">
+                      From
+                      <FormMessage />
+                    </FormLabel>
+                    <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
@@ -257,7 +282,7 @@ const CreateTransferForm = ({type}:TransferProps) => {
                     </FormControl>
                   </FormItem>
                 )}
-              />
+              /> */}
               <FormField
                 control={form.control}
                 name="to"
@@ -405,18 +430,6 @@ const CreateTransferForm = ({type}:TransferProps) => {
             Confirm
           </Button>
         </div>
-        <ConfirmationDialog
-          isOpen={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          title={dialogConfig.title}
-          description={dialogConfig.description}
-          icon={dialogConfig.icon}
-          iconColor={dialogConfig.iconColor}
-          confirmText="OK"
-          type="Info"
-          onConfirm={() => setDialogOpen(false)}
-          variant={dialogConfig.variant}
-        />
       </form>
     </Form>
   );

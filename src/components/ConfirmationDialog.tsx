@@ -19,7 +19,7 @@ interface ConfirmationDialogProps {
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;
-  type: "Confirmation" | "Info";
+  type: string;
   variant?: "danger" | "warning" | "info" | "success";
 }
 

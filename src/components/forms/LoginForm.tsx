@@ -15,18 +15,23 @@ import {
 import { useAuth } from "@/api/Auth/useAuth";
 import { login } from "@/api/client";
 import { useNavigate } from "react-router-dom";
-import { faSpinner, faLockKeyhole } from "@fortawesome/pro-regular-svg-icons";
+import {
+  faSpinner,
+  faLockKeyhole,
+  faLockKeyholeOpen,
+} from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useState } from "react";
 
 const LoginForm = () => {
   const { setToken } = useAuth();
   const navigate = useNavigate();
-
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginRequest>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
-      username: "",
+      code: "",
       password: "",
     },
   });
@@ -37,8 +42,9 @@ const LoginForm = () => {
   return (
     <div className="bg-Secondary-50 shadow h-[33.125rem] drop-shadow-2xl  drop-shadow-[#8D8D8E24] w-[25rem] rounded-CS px-6 py-[2.875rem]">
       <Form {...form}>
-        
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col justify-between h-full">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col justify-between h-full">
           <div className="space-y-12">
             <div className="flex justify-center">
               <Label className="font-[900] h-[1.563rem] text-4xl  text-Primary-500 leading-CS">
@@ -51,14 +57,12 @@ const LoginForm = () => {
               </Label>
               <FormField
                 control={form.control}
-                name="username"
+                name="code"
                 render={({ field }) => (
                   <FormItem className="flex flex-col gap-y-2">
-                                     
                     <FormLabel className="text-sm pl-2 leading-CS flex text-RT-Black gap-x-1 font-bold ">
-                      Username
+                      User Code
                       <FormMessage />
-
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -82,13 +86,19 @@ const LoginForm = () => {
                     <FormControl>
                       <div className="flex relative ">
                         <Input
-                          type="password"
+                          type={showPassword ? "text" : "password"}
                           placeholder="Write your Password"
                           className="h-10 mb-6 w-[22rem] border  border-Secondary-500 p-2 rounded-2xl"
                           {...field}
                         />
-                        <span className="absolute right-4 flex text-Primary-400 items-center justify-center  top-0.5 size-9  ">
-                          <FontAwesomeIcon icon={faLockKeyhole} />
+                        <span
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute cursor-pointer right-4 flex text-Primary-400 items-center justify-center  top-0.5 size-9  ">
+                          <FontAwesomeIcon
+                            icon={
+                              showPassword ? faLockKeyholeOpen : faLockKeyhole
+                            }
+                          />
                         </span>
                       </div>
                     </FormControl>

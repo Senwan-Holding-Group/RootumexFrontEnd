@@ -2,16 +2,27 @@ export type MenuList = {
   label: string;
   value: string;
 };
+type Actions = ["View", "Update", "Create", "Cancle", "Close"];
+export type Permissions = {
+  po: Actions[];
+  grpo: Actions[];
+  warehouse_transfer: Actions[];
+  warehouse_transfer_request: Actions[];
+  site_transfer: Actions[];
+  site_transfer_request: Actions[];
+  return_request: Actions[];
+  return_document: Actions[];
+  waste: Actions[];
+  inventory_count: Actions[];
+  item: Actions[];
+  vendor: Actions[];
+  zone: Actions[];
+};
 export type User = {
-  code: string;
+  id: string;
   name: string;
-  phone: string;
-  role: object;
-  warehouseList: string[];
-  transferType: string[];
-  requestSource: string;
-  sectionList: string[];
-  paymentType: "Cash" | "Bank";
+  warehouse_code: string;
+  permissions: Permissions;
   exp: number;
 };
 export type Item = {
@@ -31,6 +42,30 @@ export type Item = {
   updated_at: string;
   total_quantity: number;
   item_locations: string;
+};
+export type StockCount = {
+  remark: string;
+  warehouse_code: string;
+  batch: string;
+  doc_entry: number;
+  inventory_count_number: string;
+  doc_date: string;
+  status: string;
+  cancelled: string;
+  created_at: string;
+  update_at: string;
+  lines: [
+    {
+      item_code: string;
+      uom: string;
+      line_number: number;
+      doc_entry: number;
+      counted_quantity: number;
+      zone_quantity: number;
+      item_name: string;
+      zone_code: string;
+    }
+  ];
 };
 export type PO = {
   code: string;
@@ -62,6 +97,7 @@ export type Docline = {
   price: number;
   line: number;
   total_price: number;
+  status: string;
   barcode: string;
   uomCode: string;
 };
@@ -84,6 +120,7 @@ export type Return = {
   updated_at: string;
   poLines: Docline[];
 };
+
 export type WhsTransfer = {
   transferNumber: string;
   docEntry: number;
@@ -115,6 +152,7 @@ export type Waste = {
       description: string;
       reason: string;
       quantity: number;
+      status: string;
       uom_code: string;
       line_status: string;
       item_name: string;
@@ -126,6 +164,9 @@ export type Vendor = {
   vendorName: string;
   vendorType: string;
   vendorAddress: string;
+  vendorNameEng: string;
+  contactNumber: string;
+  status: string;
 };
 export type Dependencies = {
   departments: [
@@ -189,4 +230,21 @@ export type Dependencies = {
       vendorAddress: string;
     }
   ];
+};
+export type ZoneDashboard = {
+  total_items: number;
+  total_zones: number;
+  full_zones: number;
+  idle_zones: number;
+  flagged_zones: number;
+};
+export type ZoneItem = {
+  item_code: string;
+  quantity: number;
+  zone_code: string;
+  warehouse_code: string;
+  uom_code: string;
+  uom_group: string;
+  item_name: string;
+  zone_status: string;
 };

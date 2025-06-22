@@ -48,6 +48,9 @@ import SiteTransferFLDetails from "@/Documents/Final Documents/Sites Transfer Fi
 import ReturnFL from "@/Documents/Final Documents/Return Final/ReturnFL";
 import ReturnFLTable from "@/Documents/Final Documents/Return Final/ReturnFLTable";
 import ReturnFLDetails from "@/Documents/Final Documents/Return Final/ReturnFLDetails";
+import Zone from "@/Zones/Zone";
+import ZoneDashboard from "@/Zones/ZoneDashboard";
+import ZoneDetails from "@/Zones/ZoneDetails";
 
 const router = createBrowserRouter([
   {
@@ -254,6 +257,24 @@ const router = createBrowserRouter([
                 ],
               },
             ],
+          },
+        ],
+      },
+      {
+        path: "zones",
+        element: (
+          <ProtectedRoute>
+            <Zone />
+          </ProtectedRoute>
+        ),
+        children: [
+          {
+            index: true,
+            element: <ZoneDashboard />,
+          },
+          {
+            path: "details/:zoneId",
+            element: <ZoneDetails />,
           },
         ],
       },

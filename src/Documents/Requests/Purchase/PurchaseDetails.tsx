@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getPODetails, putPO } from "@/api/client";
+import { getPODetails, postCancelPO, putPO } from "@/api/client";
 import { Calendar } from "@/components/calendar";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
 import DataRenderer from "@/components/DataRenderer";
 import ItemSelect from "@/components/ItemsSelect";
 import { Button } from "@/components/ui/button";
@@ -49,19 +48,10 @@ import { Link, useOutletContext, useParams } from "react-router-dom";
 
 const PurchaseDetails = () => {
   const { id } = useParams();
-  const { setError } = useStateContext();
+  const { setError, setDialogOpen, setDialogConfig } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
   const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditPORequest>({
     resolver: zodResolver(EditPOSchema),
@@ -112,15 +102,17 @@ const PurchaseDetails = () => {
         remark: poDetails.remark,
         poLines: [],
       });
-      const linesWithLineProperty = poDetails.poLines.map((item, index) => ({
-        ...item,
-        line: index + 1,
-      }));
+      const linesWithLineProperty =
+        poDetails.poLines === null
+          ? []
+          : poDetails.poLines.map((item, index) => ({
+              ...item,
+              line: index + 1,
+            }));
 
       setdocLine(linesWithLineProperty);
     }
   }, [form, poDetails]);
-  console.log(docLine);
 
   const { mutate: editPO, isPending } = useMutation({
     mutationFn: (data: EditPORequest) => putPO(`/purchase_order/${id}`, data),
@@ -133,6 +125,9 @@ const PurchaseDetails = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -148,6 +143,45 @@ const PurchaseDetails = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+  });
+  const { mutate: cancelPO, isPending: isClosing } = useMutation({
+    mutationFn: () => postCancelPO(`/purchase_order/cancel/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["poDetails"] });
+      form.reset();
+      setDialogConfig({
+        title: "PO canceled successfully!",
+        description: "Your PO is successfully canceled ",
+        icon: faSquareCheck,
+        iconColor: "text-Success-600",
+        variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error.message === "Network Error"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.details || "An error occurred";
+      form.setError("root", { message: errorMessage });
+      setDialogConfig({
+        title: "PO not updated",
+        description: errorMessage,
+        icon: faSquareExclamation,
+        iconColor: "text-Error-600",
+        variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -156,16 +190,16 @@ const PurchaseDetails = () => {
     const newValues = {
       ...values,
       docDueDate: new Date(format(values.docDueDate, "yyyy-MM-dd")),
-      poLines: docLine.map((value) => ({
-        itemCode: value.itemCode,
-        description: value.description,
-        price: value.price,
-        uomCode: value.uom,
-        quantity: value.quantity,
-      })),
+      poLines: docLine
+        .filter((value) => value.status === "O")
+        .map((value) => ({
+          itemCode: value.itemCode,
+          description: value.description,
+          price: value.price,
+          uomCode: value.uom,
+          quantity: value.quantity,
+        })),
     };
-    console.log(newValues);
-
     editPO(newValues);
   };
   return (
@@ -401,6 +435,7 @@ const PurchaseDetails = () => {
                         <th className="pr-6 pl-4 py-3 ">Price</th>
                         <th className="pr-6 pl-4 py-3 ">Total Price</th>
                         <th className="pr-6 pl-4 py-3 ">Barcode</th>
+                        <th className="pr-6 pl-4 py-3">Status</th>
                         <th className="pr-6 pl-4 py-3 rounded-tr-xl">Remove</th>
                       </tr>
                     </thead>
@@ -417,7 +452,7 @@ const PurchaseDetails = () => {
                               value={item.quantity}
                               step="0.25"
                               type="number"
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               key={item.line}
                               onChange={(e) => {
                                 updateLineQuantity(item.line, e.target.value);
@@ -431,9 +466,10 @@ const PurchaseDetails = () => {
                           <td className="pr-6 pl-4 py-3">{item.price}</td>
                           <td className="pr-6 pl-4 py-3">{item.total_price}</td>
                           <td className="pr-6 pl-4 py-3">{item.barcode}</td>
+                          <td className="pr-6 pl-4 py-3">{item.status}</td>
                           <td className="pr-6 pl-4 py-3">
                             <Button
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               onClick={() => {
                                 setdocLine(
                                   docLine.filter((value) => {
@@ -483,7 +519,8 @@ const PurchaseDetails = () => {
                         Created at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {poDetails?.created_at &&
+                          format(new Date(poDetails?.created_at), "PP")}
                       </span>
                     </div>
                   </div>
@@ -501,7 +538,8 @@ const PurchaseDetails = () => {
                         Edited at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {poDetails?.updated_at &&
+                          format(new Date(poDetails?.updated_at), "PP")}
                       </span>
                     </div>
                   </div>
@@ -513,12 +551,25 @@ const PurchaseDetails = () => {
             {!isEdit ? (
               <>
                 <Button
-                  disabled={isFetching}
+                  disabled={isFetching || isClosing}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Cancel PO",
+                      description: "Are you sure you want to cancel this PO? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "danger",
+                      type: "Confirmation",
+                      confirm: () => cancelPO(),
+                      confirmText: "Cancel PO",
+                    });
+                  }}
                   className=" bg-transparent w-[10rem] rounded-2xl font-bold text-Error-600 border border-Secondary-500  ">
                   Cancel PO
                 </Button>
                 <Button
-                  disabled={isFetching}
+                  disabled={isFetching || isClosing}
                   type="button"
                   onClick={(e) => {
                     if (!isEdit) {
@@ -542,9 +593,21 @@ const PurchaseDetails = () => {
                   Cancel
                 </Button>
                 <Button
-                  disabled={isPending}
+                  disabled={isPending || isClosing}
                   type="submit"
-                  onClick={form.handleSubmit(onSubmit)}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Edit PO",
+                      description: "Are you sure you want to edit this PO? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "info",
+                      type: "Confirmation",
+                      confirm: () => form.handleSubmit(onSubmit)(),
+                      confirmText: "Save",
+                    });
+                  }}
                   className="  rounded-2xl w-[10rem]">
                   {isPending && (
                     <FontAwesomeIcon className="" icon={faSpinner} spin />
@@ -556,18 +619,6 @@ const PurchaseDetails = () => {
           </div>
         </div>
       </div>
-      <ConfirmationDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        title={dialogConfig.title}
-        description={dialogConfig.description}
-        icon={dialogConfig.icon}
-        iconColor={dialogConfig.iconColor}
-        confirmText="OK"
-        type="Info"
-        onConfirm={() => setDialogOpen(false)}
-        variant={dialogConfig.variant}
-      />
     </Form>
   );
 };

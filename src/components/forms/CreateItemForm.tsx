@@ -29,22 +29,14 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Input } from "../ui/input";
-import { useState } from "react";
-import ConfirmationDialog from "../ConfirmationDialog";
 import { useOutletContext } from "react-router-dom";
 import { Dependencies } from "@/lib/types";
+import { useStateContext } from "@/context/useStateContext";
 
 const CreateItemForm = () => {
   const queryClient = useQueryClient();
+  const { setDialogOpen, setDialogConfig } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
 
   const form = useForm<CreateItemRequest>({
     resolver: zodResolver(CreateItemSchema),
@@ -77,6 +69,9 @@ const CreateItemForm = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -92,6 +87,9 @@ const CreateItemForm = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -385,18 +383,6 @@ const CreateItemForm = () => {
             Confirm
           </Button>
         </div>
-        <ConfirmationDialog
-          isOpen={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          title={dialogConfig.title}
-          description={dialogConfig.description}
-          icon={dialogConfig.icon}
-          iconColor={dialogConfig.iconColor}
-          confirmText="OK"
-          type="Info"
-          onConfirm={() => setDialogOpen(false)}
-          variant={dialogConfig.variant}
-        />
       </form>
     </Form>
   );

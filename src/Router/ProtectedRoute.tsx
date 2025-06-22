@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return null;
   }
 
-  if (token !== null) {
+  if (token === null) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

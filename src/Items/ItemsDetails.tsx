@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getItemDetails, putItem } from "@/api/client";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,22 +32,16 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 const ItemsDetails = () => {
   const { id } = useParams();
-  const { setError } = useStateContext();
+  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
   const queryClient = useQueryClient();
   const dependencies = useOutletContext<Dependencies>();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
+
   const [isEdit, setisEdit] = useState(false);
   const {
     data: itemDetails,
@@ -102,6 +95,9 @@ const ItemsDetails = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -117,6 +113,9 @@ const ItemsDetails = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -531,7 +530,8 @@ const ItemsDetails = () => {
                         Created at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {itemDetails?.created_at &&
+                          format(new Date(itemDetails?.created_at), "PP")}
                       </span>
                     </div>
                   </div>
@@ -549,7 +549,8 @@ const ItemsDetails = () => {
                         Edited at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {itemDetails?.updated_at &&
+                          format(new Date(itemDetails?.updated_at), "PP")}
                       </span>
                     </div>
                   </div>
@@ -592,7 +593,19 @@ const ItemsDetails = () => {
                 <Button
                   disabled={isPending}
                   type="submit"
-                  onClick={form.handleSubmit(onSubmit)}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Edit Item",
+                      description: "Are you sure you want to edit this Item? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "info",
+                      type: "Confirmation",
+                      confirm: () => form.handleSubmit(onSubmit)(),
+                      confirmText: "Save",
+                    });
+                  }}
                   className="  rounded-2xl w-[10rem]">
                   {isPending && (
                     <FontAwesomeIcon className="" icon={faSpinner} spin />
@@ -604,18 +617,6 @@ const ItemsDetails = () => {
           </div>
         </div>
       </div>
-      <ConfirmationDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        title={dialogConfig.title}
-        description={dialogConfig.description}
-        icon={dialogConfig.icon}
-        iconColor={dialogConfig.iconColor}
-        confirmText="OK"
-        type="Info"
-        onConfirm={() => setDialogOpen(false)}
-        variant={dialogConfig.variant}
-      />
     </Form>
   );
 };

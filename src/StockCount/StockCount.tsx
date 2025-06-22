@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom"
+import { Outlet, useOutletContext } from "react-router-dom"
 
 const StockCount = () => {
   return (
@@ -6,7 +6,7 @@ const StockCount = () => {
           <h1 className="ml-2 w-full  text-Gray-500 font-bold text-lg leading-CS ">
             Stock Count
           </h1>
-            <Outlet/>
+            <Outlet context={useOutletContext()}/>
         </div>
   )
 }

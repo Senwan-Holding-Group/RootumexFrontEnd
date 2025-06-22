@@ -1,44 +1,51 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getReturnDetails, putReturn } from "@/api/client";
+import { getReturnDetails, postCancelReturn, putReturn } from "@/api/client";
 import { Calendar } from "@/components/calendar";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
 import DataRenderer from "@/components/DataRenderer";
 import ItemSelect from "@/components/ItemsSelect";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/ui/Loader";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useStateContext } from "@/context/useStateContext";
-import {  EditReturnRequest, EditReturnSchema } from "@/lib/formsValidation";
-import { Dependencies, Docline } from "@/lib/types";
+import { EditReturnRequest, EditReturnSchema } from "@/lib/formsValidation";
+import { Docline } from "@/lib/types";
 import { calculateLineTotal, cn, numberWithCommas } from "@/lib/utils";
-import { faCalendarCirclePlus, faChevronLeft, faSpinner, faSquareCheck, faSquareExclamation, faTrashCan } from "@fortawesome/pro-regular-svg-icons";
+import {
+  faCalendarCirclePlus,
+  faChevronLeft,
+  faSpinner,
+  faSquareCheck,
+  faSquareExclamation,
+  faTrashCan,
+} from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useOutletContext, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const ReturnDetails = () => {
   const { id } = useParams();
-  const { setError } = useStateContext();
-  const dependencies = useOutletContext<Dependencies>();
+  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
+  // const dependencies = useOutletContext<Dependencies>();
   const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<Docline[]>([]);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditReturnRequest>({
     resolver: zodResolver(EditReturnSchema),
@@ -89,18 +96,21 @@ const ReturnDetails = () => {
         remark: returnDetails.remark,
         poLines: [],
       });
-      const linesWithLineProperty = returnDetails.poLines.map((item, index) => ({
-        ...item,
-        line: index + 1,
-      }));
+      const linesWithLineProperty =
+        returnDetails.poLines === null
+          ? []
+          : returnDetails.poLines.map((item, index) => ({
+              ...item,
+              line: index + 1,
+            }));
 
       setdocLine(linesWithLineProperty);
     }
   }, [form, returnDetails]);
-  console.log(docLine);
 
   const { mutate: editReturn, isPending } = useMutation({
-    mutationFn: (data: EditReturnRequest) => putReturn(`/return_request/${id}`, data),
+    mutationFn: (data: EditReturnRequest) =>
+      putReturn(`/return_request/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["returnDetails"] });
       form.reset();
@@ -110,6 +120,9 @@ const ReturnDetails = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -125,6 +138,45 @@ const ReturnDetails = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+  });
+  const { mutate: cancelReturn, isPending: isClosing } = useMutation({
+    mutationFn: () => postCancelReturn(`/return_request/cancel/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["returnDetails"] });
+      form.reset();
+      setDialogConfig({
+        title: "Return request canceled successfully!",
+        description: "Your return request is successfully canceled ",
+        icon: faSquareCheck,
+        iconColor: "text-Success-600",
+        variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error.message === "Network Error"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.details || "An error occurred";
+      form.setError("root", { message: errorMessage });
+      setDialogConfig({
+        title: "Return request not updated",
+        description: errorMessage,
+        icon: faSquareExclamation,
+        iconColor: "text-Error-600",
+        variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -133,13 +185,15 @@ const ReturnDetails = () => {
     const newValues = {
       ...values,
       docDueDate: new Date(format(values.docDueDate, "yyyy-MM-dd")),
-      poLines: docLine.map((value) => ({
-        itemCode: value.itemCode,
-        description: value.description,
-        price: value.price,
-        uomCode: value.uom,
-        quantity: value.quantity,
-      })),
+      poLines: docLine
+        .filter((value) => value.status === "O")
+        .map((value) => ({
+          itemCode: value.itemCode,
+          description: value.description,
+          price: value.price,
+          uomCode: value.uom,
+          quantity: value.quantity,
+        })),
     };
     editReturn(newValues);
   };
@@ -275,7 +329,21 @@ const ReturnDetails = () => {
                         </FormItem>
                       )}
                     />
-                    <FormField
+                    <div className="space-y-1  ">
+                      <Label
+                        className={`${
+                          isEdit ? "text-Gray-300" : "text-Gray-500"
+                        } ml-2 font-bold text-sm leading-CS h-[1.1875rem]`}>
+                        Warehouse Code
+                      </Label>
+                      <span
+                        className={`${
+                          isEdit ? "bg-Gray-50 text-Gray-300" : "text-Gray-500"
+                        } p-2 rounded-CS border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10`}>
+                        {returnDetails?.warehouseCode}
+                      </span>
+                    </div>
+                    {/* <FormField
                       control={form.control}
                       name="warehouseCode"
                       render={({ field }) => (
@@ -306,7 +374,7 @@ const ReturnDetails = () => {
                           </FormControl>
                         </FormItem>
                       )}
-                    />
+                    /> */}
                   </div>
                   <div className=" w-1/3 space-y-4">
                     <div className="space-y-1  ">
@@ -315,7 +383,7 @@ const ReturnDetails = () => {
                         Document Total
                       </Label>
                       <span
-                        className={`p-2 rounded-CS  bg-Primary-5 text-Primary-500 border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10`}>
+                        className={`p-2 rounded-CS  bg-Primary-5  border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10`}>
                         {numberWithCommas(documentTotal)}
                       </span>
                     </div>
@@ -375,6 +443,7 @@ const ReturnDetails = () => {
                         <th className="pr-6 pl-4 py-3 ">Price</th>
                         <th className="pr-6 pl-4 py-3 ">Total Price</th>
                         <th className="pr-6 pl-4 py-3 ">Barcode</th>
+                        <th className="pr-6 pl-4 py-3">Status</th>
                         <th className="pr-6 pl-4 py-3 rounded-tr-xl">Remove</th>
                       </tr>
                     </thead>
@@ -391,7 +460,7 @@ const ReturnDetails = () => {
                               value={item.quantity}
                               step="0.25"
                               type="number"
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               key={item.line}
                               onChange={(e) => {
                                 updateLineQuantity(item.line, e.target.value);
@@ -399,13 +468,14 @@ const ReturnDetails = () => {
                               className="w-[5rem] p-0 h-1/2 border-0 text-center rounded-lg"
                             />
                           </td>
-                       
+
                           <td className="pr-6 pl-4 py-3">{item.price}</td>
                           <td className="pr-6 pl-4 py-3">{item.total_price}</td>
                           <td className="pr-6 pl-4 py-3">{item.barcode}</td>
+                          <td className="pr-6 pl-4 py-3">{item.status}</td>
                           <td className="pr-6 pl-4 py-3">
                             <Button
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               onClick={() => {
                                 setdocLine(
                                   docLine.filter((value) => {
@@ -428,7 +498,7 @@ const ReturnDetails = () => {
                       {isEdit && (
                         <tr className="text-RT-Black font-normal text-base border-b-2 border-Primary-15 transition duration-300 hover:rounded-bl-2xl ease-in-out hover:bg-gray-100 cursor-pointer">
                           <td className="pr-6 pl-4 py-3 ">
-                            <ItemSelect  setState={setdocLine} state={docLine} />
+                            <ItemSelect setState={setdocLine} state={docLine} />
                           </td>
                         </tr>
                       )}
@@ -455,7 +525,8 @@ const ReturnDetails = () => {
                         Created at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {returnDetails?.created_at &&
+                          format(new Date(returnDetails.created_at), "PP")}
                       </span>
                     </div>
                   </div>
@@ -473,7 +544,8 @@ const ReturnDetails = () => {
                         Edited at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {returnDetails?.updated_at &&
+                          format(new Date(returnDetails.updated_at), "PP")}
                       </span>
                     </div>
                   </div>
@@ -485,7 +557,21 @@ const ReturnDetails = () => {
             {!isEdit ? (
               <>
                 <Button
-                  disabled={isFetching}
+                  disabled={isFetching || isClosing}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Cancel Return request",
+                      description:
+                        "Are you sure you want to cancel this Return request? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "danger",
+                      type: "Confirmation",
+                      confirm: () => cancelReturn(),
+                      confirmText: "Cancel Return",
+                    });
+                  }}
                   className=" bg-transparent w-[10rem] rounded-2xl font-bold text-Error-600 border border-Secondary-500  ">
                   Cancel Return
                 </Button>
@@ -514,9 +600,22 @@ const ReturnDetails = () => {
                   Cancel
                 </Button>
                 <Button
-                  disabled={isPending}
+                  disabled={isPending || isClosing}
                   type="submit"
-                  onClick={form.handleSubmit(onSubmit)}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Edit Return request",
+                      description:
+                        "Are you sure you want to edit this Return request? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "info",
+                      type: "Confirmation",
+                      confirm: () => form.handleSubmit(onSubmit)(),
+                      confirmText: "Save",
+                    });
+                  }}
                   className="  rounded-2xl w-[10rem]">
                   {isPending && (
                     <FontAwesomeIcon className="" icon={faSpinner} spin />
@@ -528,19 +627,8 @@ const ReturnDetails = () => {
           </div>
         </div>
       </div>
-      <ConfirmationDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        title={dialogConfig.title}
-        description={dialogConfig.description}
-        icon={dialogConfig.icon}
-        iconColor={dialogConfig.iconColor}
-        confirmText="OK"
-        type="Info"
-        onConfirm={() => setDialogOpen(false)}
-        variant={dialogConfig.variant}
-      />
     </Form>
-  );}
+  );
+};
 
-export default ReturnDetails
+export default ReturnDetails;

@@ -1,21 +1,47 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getTransferDetails, putTransfer } from "@/api/client";
+import {
+  getTransferDetails,
+  postCancelTransfer,
+  putTransfer,
+} from "@/api/client";
 import { Calendar } from "@/components/calendar";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
 import DataRenderer from "@/components/DataRenderer";
 import ItemSelect from "@/components/ItemsSelect";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/ui/Loader";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useStateContext } from "@/context/useStateContext";
 import { EditTransferRequest, EditTransferSchema } from "@/lib/formsValidation";
 import { Dependencies, Docline } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { faCalendarCirclePlus, faChevronLeft, faSpinner, faSquareCheck, faSquareExclamation, faTrashCan } from "@fortawesome/pro-regular-svg-icons";
+import {
+  faCalendarCirclePlus,
+  faChevronLeft,
+  faSpinner,
+  faSquareCheck,
+  faSquareExclamation,
+  faTrashCan,
+} from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,19 +51,11 @@ import { useForm } from "react-hook-form";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 
 const SiteTransferDetails = () => {
- const { id } = useParams();
-  const { setError } = useStateContext();
+  const { id } = useParams();
+  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
   const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditTransferRequest>({
     resolver: zodResolver(EditTransferSchema),
@@ -93,10 +111,10 @@ const SiteTransferDetails = () => {
       setdocLine(linesWithLineProperty);
     }
   }, [form, siteTransferDetails]);
-  console.log(docLine);
 
   const { mutate: editTransfer, isPending } = useMutation({
-    mutationFn: (data: EditTransferRequest) => putTransfer(`/site_transfer_request/${id}`, data),
+    mutationFn: (data: EditTransferRequest) =>
+      putTransfer(`/site_transfer_request/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["siteTransferDetails"] });
       form.reset();
@@ -106,6 +124,9 @@ const SiteTransferDetails = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -121,6 +142,45 @@ const SiteTransferDetails = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+  });
+  const { mutate: cancelTransfer, isPending: isClosing } = useMutation({
+    mutationFn: () => postCancelTransfer(`/site_transfer_request/cancel/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["siteTransferDetails"] });
+      form.reset();
+      setDialogConfig({
+        title: "Site Transfer canceled successfully!",
+        description: "Your Site Transfer is successfully canceled ",
+        icon: faSquareCheck,
+        iconColor: "text-Success-600",
+        variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error.message === "Network Error"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.details || "An error occurred";
+      form.setError("root", { message: errorMessage });
+      setDialogConfig({
+        title: "Site Transfer not updated",
+        description: errorMessage,
+        icon: faSquareExclamation,
+        iconColor: "text-Error-600",
+        variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -129,15 +189,15 @@ const SiteTransferDetails = () => {
     const newValues = {
       ...values,
       docDueDate: new Date(format(values.docDueDate, "yyyy-MM-dd")),
-      transferLines: docLine.map((value) => ({
-        itemCode: value.itemCode,
-        description: value.description,
-        uomCode: value.uomCode,
-        quantity: value.quantity,
-      })),
+      transferLines: docLine
+        .filter((value) => value.status === "O")
+        .map((value) => ({
+          itemCode: value.itemCode,
+          description: value.description,
+          uomCode: value.uomCode,
+          quantity: value.quantity,
+        })),
     };
-    console.log(newValues);
-
     editTransfer(newValues);
   };
   return (
@@ -180,7 +240,7 @@ const SiteTransferDetails = () => {
                         {siteTransferDetails?.transferNumber}
                       </span>
                     </div>
-                 
+
                     <div className="space-y-1  ">
                       <Label
                         className={`${
@@ -195,7 +255,7 @@ const SiteTransferDetails = () => {
                         {siteTransferDetails?.status}
                       </span>
                     </div>
-                             <FormField
+                    <FormField
                       control={form.control}
                       name="remark"
                       render={({ field }) => (
@@ -277,11 +337,23 @@ const SiteTransferDetails = () => {
                         </FormItem>
                       )}
                     />
-                 
                   </div>
                   <div className=" w-1/3 space-y-4">
-           
-                  <FormField
+                    <div className="space-y-1  ">
+                      <Label
+                        className={`${
+                          isEdit ? "text-Gray-300" : "text-Gray-500"
+                        } ml-2 font-bold text-sm leading-CS h-[1.1875rem]`}>
+                        From
+                      </Label>
+                      <span
+                        className={`${
+                          isEdit ? "bg-Gray-50 text-Gray-300" : "text-Gray-500"
+                        } p-2 rounded-CS border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10`}>
+                        {siteTransferDetails?.from}
+                      </span>
+                    </div>
+                    {/* <FormField
                       control={form.control}
                       name="from"
                       render={({ field }) => (
@@ -312,8 +384,8 @@ const SiteTransferDetails = () => {
                           </FormControl>
                         </FormItem>
                       )}
-                    />
-                       <FormField
+                    /> */}
+                    <FormField
                       control={form.control}
                       name="to"
                       render={({ field }) => (
@@ -361,6 +433,7 @@ const SiteTransferDetails = () => {
                         <th className="pr-6 pl-4 py-3">UOM</th>
                         <th className="pr-6 pl-4 py-3 ">Quantity</th>
                         <th className="pr-6 pl-4 py-3 ">Barcode</th>
+                        <th className="pr-6 pl-4 py-3">Status</th>
                         <th className="pr-6 pl-4 py-3 rounded-tr-xl">Remove</th>
                       </tr>
                     </thead>
@@ -377,7 +450,7 @@ const SiteTransferDetails = () => {
                               value={item.quantity}
                               step="0.25"
                               type="number"
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               key={item.line}
                               onChange={(e) => {
                                 updateLineQuantity(item.line, e.target.value);
@@ -386,9 +459,10 @@ const SiteTransferDetails = () => {
                             />
                           </td>
                           <td className="pr-6 pl-4 py-3">{item.barcode}</td>
+                          <td className="pr-6 pl-4 py-3">{item.status}</td>
                           <td className="pr-6 pl-4 py-3">
                             <Button
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               onClick={() => {
                                 setdocLine(
                                   docLine.filter((value) => {
@@ -438,7 +512,8 @@ const SiteTransferDetails = () => {
                         Created at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {siteTransferDetails?.createdAt &&
+                          format(new Date(siteTransferDetails.createdAt), "PP")}
                       </span>
                     </div>
                   </div>
@@ -456,7 +531,8 @@ const SiteTransferDetails = () => {
                         Edited at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {siteTransferDetails?.updateAt &&
+                          format(new Date(siteTransferDetails.updateAt), "PP")}
                       </span>
                     </div>
                   </div>
@@ -468,7 +544,21 @@ const SiteTransferDetails = () => {
             {!isEdit ? (
               <>
                 <Button
-                  disabled={isFetching}
+                  disabled={isFetching || isClosing}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Cancel Site Transfer",
+                      description:
+                        "Are you sure you want to cancel this Site Transfer? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "danger",
+                      type: "Confirmation",
+                      confirm: () => cancelTransfer(),
+                      confirmText: "Cancel Site Transfer",
+                    });
+                  }}
                   className=" bg-transparent w-[10rem] rounded-2xl font-bold text-Error-600 border border-Secondary-500  ">
                   Cancel Transfer
                 </Button>
@@ -499,7 +589,20 @@ const SiteTransferDetails = () => {
                 <Button
                   disabled={isPending}
                   type="submit"
-                  onClick={form.handleSubmit(onSubmit)}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Edit Site Transfer",
+                      description:
+                        "Are you sure you want to edit this Site Transfer? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "info",
+                      type: "Confirmation",
+                      confirm: () => form.handleSubmit(onSubmit)(),
+                      confirmText: "Save",
+                    });
+                  }}
                   className="  rounded-2xl w-[10rem]">
                   {isPending && (
                     <FontAwesomeIcon className="" icon={faSpinner} spin />
@@ -511,20 +614,8 @@ const SiteTransferDetails = () => {
           </div>
         </div>
       </div>
-      <ConfirmationDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        title={dialogConfig.title}
-        description={dialogConfig.description}
-        icon={dialogConfig.icon}
-        iconColor={dialogConfig.iconColor}
-        confirmText="OK"
-        type="Info"
-        onConfirm={() => setDialogOpen(false)}
-        variant={dialogConfig.variant}
-      />
     </Form>
   );
-}
+};
 
-export default SiteTransferDetails
+export default SiteTransferDetails;

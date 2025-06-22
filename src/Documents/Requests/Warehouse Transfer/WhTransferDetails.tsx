@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getTransferDetails, putTransfer } from "@/api/client";
+import {
+  getTransferDetails,
+  postCancelTransfer,
+  putTransfer,
+} from "@/api/client";
 import { Calendar } from "@/components/calendar";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
 import DataRenderer from "@/components/DataRenderer";
 import ItemSelect from "@/components/ItemsSelect";
 import { Button } from "@/components/ui/button";
@@ -49,19 +52,10 @@ import { Link, useOutletContext, useParams } from "react-router-dom";
 
 const WhTransferDetails = () => {
   const { id } = useParams();
-  const { setError } = useStateContext();
+  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
   const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: "",
-    description: "",
-    icon: faSquareCheck,
-    iconColor: "text-Success-600",
-    variant: "success" as "success" | "danger",
-  });
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditTransferRequest>({
     resolver: zodResolver(EditTransferSchema),
@@ -78,7 +72,7 @@ const WhTransferDetails = () => {
     isFetching,
     isError,
   } = useQuery({
-    queryKey: ["transferDetails", id],
+    queryKey: ["WhtransferDetails", id],
     queryFn: () => getTransferDetails(`/transfer/${id}`, setError),
     refetchOnWindowFocus: false,
     refetchOnMount: true,
@@ -119,9 +113,10 @@ const WhTransferDetails = () => {
   }, [form, transferDetails]);
 
   const { mutate: editTransfer, isPending } = useMutation({
-    mutationFn: (data: EditTransferRequest) => putTransfer(`/transfer/${id}`, data),
+    mutationFn: (data: EditTransferRequest) =>
+      putTransfer(`/transfer/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transferDetails"] });
+      queryClient.invalidateQueries({ queryKey: ["WhtransferDetails"] });
       form.reset();
       setDialogConfig({
         title: "Transfer updated successfully!",
@@ -129,6 +124,9 @@ const WhTransferDetails = () => {
         icon: faSquareCheck,
         iconColor: "text-Success-600",
         variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -144,6 +142,45 @@ const WhTransferDetails = () => {
         icon: faSquareExclamation,
         iconColor: "text-Error-600",
         variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+  });
+  const { mutate: cancelTransfer, isPending: isClosing } = useMutation({
+    mutationFn: () => postCancelTransfer(`/transfer/cancel/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["WhtransferDetails"] });
+      form.reset();
+      setDialogConfig({
+        title: "Transfer canceled successfully!",
+        description: "Your transfer is successfully canceled ",
+        icon: faSquareCheck,
+        iconColor: "text-Success-600",
+        variant: "success",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
+      });
+      setDialogOpen(true);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error.message === "Network Error"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.details || "An error occurred";
+      form.setError("root", { message: errorMessage });
+      setDialogConfig({
+        title: "Transfer not updated",
+        description: errorMessage,
+        icon: faSquareExclamation,
+        iconColor: "text-Error-600",
+        variant: "danger",
+        type: "Info",
+        confirm: undefined,
+        confirmText: "OK",
       });
       setDialogOpen(true);
     },
@@ -152,15 +189,15 @@ const WhTransferDetails = () => {
     const newValues = {
       ...values,
       docDueDate: new Date(format(values.docDueDate, "yyyy-MM-dd")),
-      transferLines: docLine.map((value) => ({
-        itemCode: value.itemCode,
-        description: value.description,
-        uomCode: value.uomCode,
-        quantity: value.quantity,
-      })),
+      transferLines: docLine
+        .filter((value) => value.status === "O")
+        .map((value) => ({
+          itemCode: value.itemCode,
+          description: value.description,
+          uomCode: value.uomCode,
+          quantity: value.quantity,
+        })),
     };
-    console.log(newValues);
-
     editTransfer(newValues);
   };
   return (
@@ -203,7 +240,7 @@ const WhTransferDetails = () => {
                         {transferDetails?.transferNumber}
                       </span>
                     </div>
-                 
+
                     <div className="space-y-1  ">
                       <Label
                         className={`${
@@ -218,7 +255,7 @@ const WhTransferDetails = () => {
                         {transferDetails?.status}
                       </span>
                     </div>
-                             <FormField
+                    <FormField
                       control={form.control}
                       name="remark"
                       render={({ field }) => (
@@ -300,11 +337,23 @@ const WhTransferDetails = () => {
                         </FormItem>
                       )}
                     />
-                 
                   </div>
                   <div className=" w-1/3 space-y-4">
-           
-                  <FormField
+                    <div className="space-y-1  ">
+                      <Label
+                        className={`${
+                          isEdit ? "text-Gray-300" : "text-Gray-500"
+                        } ml-2 font-bold text-sm leading-CS h-[1.1875rem]`}>
+                        From
+                      </Label>
+                      <span
+                        className={`${
+                          isEdit ? "bg-Gray-50 text-Gray-300" : "text-Gray-500"
+                        } p-2 rounded-CS border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10`}>
+                        {transferDetails?.from}
+                      </span>
+                    </div>
+                    {/* <FormField
                       control={form.control}
                       name="from"
                       render={({ field }) => (
@@ -335,8 +384,8 @@ const WhTransferDetails = () => {
                           </FormControl>
                         </FormItem>
                       )}
-                    />
-                       <FormField
+                    /> */}
+                    <FormField
                       control={form.control}
                       name="to"
                       render={({ field }) => (
@@ -384,6 +433,7 @@ const WhTransferDetails = () => {
                         <th className="pr-6 pl-4 py-3">UOM</th>
                         <th className="pr-6 pl-4 py-3 ">Quantity</th>
                         <th className="pr-6 pl-4 py-3 ">Barcode</th>
+                        <th className="pr-6 pl-4 py-3">Status</th>
                         <th className="pr-6 pl-4 py-3 rounded-tr-xl">Remove</th>
                       </tr>
                     </thead>
@@ -400,7 +450,7 @@ const WhTransferDetails = () => {
                               value={item.quantity}
                               step="0.25"
                               type="number"
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               key={item.line}
                               onChange={(e) => {
                                 updateLineQuantity(item.line, e.target.value);
@@ -409,9 +459,10 @@ const WhTransferDetails = () => {
                             />
                           </td>
                           <td className="pr-6 pl-4 py-3">{item.barcode}</td>
+                          <td className="pr-6 pl-4 py-3">{item.status}</td>
                           <td className="pr-6 pl-4 py-3">
                             <Button
-                              disabled={!isEdit}
+                              disabled={!isEdit || item.status === "C"}
                               onClick={() => {
                                 setdocLine(
                                   docLine.filter((value) => {
@@ -461,7 +512,8 @@ const WhTransferDetails = () => {
                         Created at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {transferDetails?.createdAt &&
+                          format(new Date(transferDetails?.createdAt), "PP")}
                       </span>
                     </div>
                   </div>
@@ -479,7 +531,8 @@ const WhTransferDetails = () => {
                         Edited at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                        31,Mar,2025
+                        {transferDetails?.updateAt &&
+                          format(new Date(transferDetails.updateAt), "PP")}
                       </span>
                     </div>
                   </div>
@@ -491,7 +544,21 @@ const WhTransferDetails = () => {
             {!isEdit ? (
               <>
                 <Button
-                  disabled={isFetching}
+                  disabled={isFetching || isClosing}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Cancel Warehouse Transfer",
+                      description:
+                        "Are you sure you want to cancel this Warehouse Transfer? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "danger",
+                      type: "Confirmation",
+                      confirm: () => cancelTransfer(),
+                      confirmText: "Cancel  Transfer",
+                    });
+                  }}
                   className=" bg-transparent w-[10rem] rounded-2xl font-bold text-Error-600 border border-Secondary-500  ">
                   Cancel Transfer
                 </Button>
@@ -522,7 +589,20 @@ const WhTransferDetails = () => {
                 <Button
                   disabled={isPending}
                   type="submit"
-                  onClick={form.handleSubmit(onSubmit)}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setDialogConfig({
+                      title: "Edit Warehouse Transfer",
+                      description:
+                        "Are you sure you want to edit this Warehouse Transfer? ",
+                      icon: faSquareExclamation,
+                      iconColor: "text-Primary-400",
+                      variant: "info",
+                      type: "Confirmation",
+                      confirm: () => form.handleSubmit(onSubmit)(),
+                      confirmText: "Save",
+                    });
+                  }}
                   className="  rounded-2xl w-[10rem]">
                   {isPending && (
                     <FontAwesomeIcon className="" icon={faSpinner} spin />
@@ -534,18 +614,6 @@ const WhTransferDetails = () => {
           </div>
         </div>
       </div>
-      <ConfirmationDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        title={dialogConfig.title}
-        description={dialogConfig.description}
-        icon={dialogConfig.icon}
-        iconColor={dialogConfig.iconColor}
-        confirmText="OK"
-        type="Info"
-        onConfirm={() => setDialogOpen(false)}
-        variant={dialogConfig.variant}
-      />
     </Form>
   );
 };

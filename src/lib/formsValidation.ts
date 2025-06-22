@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const loginFormSchema = z.object({
-  username: z.string().min(2, { message: "Username is required." }),
+  code: z.string().min(2, { message: "Username is required." }),
   password: z.string().min(4, { message: "Password is required " }),
 });
 export type LoginRequest = z.infer<typeof loginFormSchema>;
@@ -205,3 +205,45 @@ export const EditWasteSchema = z.object({
   ),
 });
 export type EditWasteRequest = z.infer<typeof EditWasteSchema>;
+
+export const CreateStockCountSchema = z.object({
+  remark: z.string().min(1, { message: "Remark name is required" }),
+  warehouse_code: z.string().min(1, { message: "Warehouse code is required" }),
+  batch: z.string().min(1, { message: "Batch code is required" }),
+  docDate: z.date({
+    required_error: "Document Date is required.",
+  }),
+});
+export type CreateStockCount = z.infer<typeof CreateStockCountSchema>;
+export const EditStockCountSchema = z.object({
+  remark: z.string(),
+  lines: z.array(
+    z.object({
+      item_code: z.string(),
+      uom: z.string(),
+      doc_entry: z.number(),
+      counted_quantity: z.number(),
+      zone_quantity: z.number(),
+      item_name: z.string(),
+      zone_code: z.string(),
+    })
+  ),
+});
+export type EditStockCountRequest = z.infer<typeof EditStockCountSchema>;
+export const EditVendorSchema = z.object({
+  vendorName: z.string(),
+  vendorType: z.string(),
+  vendorAddress: z.string(),
+  vendorNameEng: z.string(),
+  contactNumber: z.string(),
+  status: z.string(),
+});
+export type EditVendorRequest = z.infer<typeof EditVendorSchema>;
+export const CreateVendorSchema = z.object({
+  vendorName:  z.string().min(1, { message: "Vendor name is required" }),
+  vendorType:  z.string().min(1, { message: "Vendor type is required" }),
+  vendorAddress:  z.string().min(1, { message: "Vendor address is required" }),
+  vendorNameEng:  z.string().min(1, { message: "Vendor name (English) is required" }),
+  contactNumber:  z.string().min(1, { message: "Contact number is required" }),
+});
+export type CreateVendorRequest = z.infer<typeof CreateVendorSchema>;

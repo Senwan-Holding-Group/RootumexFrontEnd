@@ -5,12 +5,12 @@ import {
   faFileInvoice,
   faGridHorizontal,
   faSitemap,
-  faUser,
   faUsers,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { NavLink } from "react-router-dom";
 import NavMenu from "./NavMenu";
+import UserProfile from "./UserProfile";
 
 const navItems = [
   {
@@ -82,30 +82,29 @@ const Navbar = () => {
         <button className="w-8 h-8 bg-white  border-[0.05rem] drop-shadow-[#8D8D8E40] hover:cursor-pointer p-[0.4rem] rounded-[0.7rem] border-Secondary-500 flex items-center justify-center shadow-sm">
           <FontAwesomeIcon icon={faCog} />
         </button>
-        <button className="w-8 h-8 bg-white  border-[0.05rem] drop-shadow-[#8D8D8E40]  hover:cursor-pointer p-[0.4rem] rounded-[0.7rem] border-Secondary-500 flex items-center justify-center shadow-sm">
-          <FontAwesomeIcon icon={faUser} />
-        </button>
+        <UserProfile />
+
         <NavMenu>
-            {navItems.map((i) => (
-              <nav key={i.title} className="flex flex-col w-full">
-                {i.items.map((item) => (
-                  <NavLink
-                    to={item.path}
-                    key={item.label}
-                    style={({ isActive }) => ({
-                      background: isActive ? "#E0E5EA" : "",
-                      borderRadius: isActive ? "0.5rem" : "",
-                      color: isActive ? "#143D60" : "#545456",
-                    })}
-                    className={
-                      "transition-all ease-in-out   text-base leading-CS px-4 py-2 font-semibold  "
-                    }>
-                    {/* {item.icon} */}
-                    <span className=" text-nowrap">{item.label}</span>
-                  </NavLink>
-                ))}
-              </nav>
-            ))}
+          {navItems.map((i) => (
+            <nav key={i.title} className="flex flex-col w-full">
+              {i.items.map((item) => (
+                <NavLink
+                  to={item.path}
+                  key={item.label}
+                  style={({ isActive }) => ({
+                    background: isActive ? "#E0E5EA" : "",
+                    borderRadius: isActive ? "0.5rem" : "",
+                    color: isActive ? "#143D60" : "#545456",
+                  })}
+                  className={
+                    "transition-all ease-in-out   text-base leading-CS px-4 py-2 font-semibold  "
+                  }>
+                  {/* {item.icon} */}
+                  <span className=" text-nowrap">{item.label}</span>
+                </NavLink>
+              ))}
+            </nav>
+          ))}
         </NavMenu>
       </div>
     </div>
