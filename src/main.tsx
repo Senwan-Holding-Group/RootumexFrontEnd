@@ -4,15 +4,14 @@ import "./index.css";
 import AuthProvider from "./api/Auth/AuthProvider.tsx";
 import Router from "./Router/Router.tsx";
 import StateProvider from "./context/StateProvider.tsx";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-const queryClient = new QueryClient();
+import QueryClientWithMutationCache from "./components/QueryClientWithMutationCache.tsx";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
       <StateProvider>
-        <QueryClientProvider client={queryClient}>
+        <QueryClientWithMutationCache>
           <Router />
-        </QueryClientProvider>
+        </QueryClientWithMutationCache>
       </StateProvider>
     </AuthProvider>
   </StrictMode>

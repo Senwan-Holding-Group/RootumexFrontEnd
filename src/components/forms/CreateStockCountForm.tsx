@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "../ui/button";
 import { DialogClose } from "../ui/dialog";
@@ -22,11 +21,7 @@ import {
 import {
   faCalendarCirclePlus,
   faSpinner,
-  faSquareCheck,
-  faSquareExclamation,
 } from "@fortawesome/pro-regular-svg-icons";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useStateContext } from "@/context/useStateContext";
 import { useOutletContext } from "react-router-dom";
 import { Dependencies } from "@/lib/types";
 import { useForm } from "react-hook-form";
@@ -35,17 +30,14 @@ import {
   CreateStockCount,
   CreateStockCountSchema,
 } from "@/lib/formsValidation";
-import { postStockCount } from "@/api/client";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { format } from "date-fns";
 import { Calendar } from "../calendar";
 import { cn } from "@/lib/utils";
+import { useCreateStockCount } from "@/api/query";
 
 const CreateStockCountForm = () => {
-  const queryClient = useQueryClient();
-  const { setDialogOpen, setDialogConfig } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
-
   const form = useForm<CreateStockCount>({
     resolver: zodResolver(CreateStockCountSchema),
     defaultValues: {
@@ -54,43 +46,7 @@ const CreateStockCountForm = () => {
       remark: "",
     },
   });
-  const { mutate: createStockCount, isPending } = useMutation({
-    mutationFn: (data: CreateStockCount) =>
-      postStockCount("/inventory_count", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["stockCountList"] });
-      form.reset();
-      setDialogConfig({
-        title: "Stock count created successfully!",
-        description: "Your stock count is successfully created ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Stock count not created",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: createStockCount, isPending } = useCreateStockCount(form);
   const onSubmit = async (values: CreateStockCount) => {
     createStockCount(values);
   };

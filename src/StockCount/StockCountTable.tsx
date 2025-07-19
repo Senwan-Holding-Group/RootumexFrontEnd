@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getStockCount } from "@/api/client";
-
 import Search from "@/components/Search";
 import StatusBadge from "@/components/StatusBadge";
 import { useStateContext } from "@/context/useStateContext";
@@ -11,6 +9,7 @@ import CreateStockCount from "./CreateStockCount";
 import { useTableState } from "@/lib/hooks/useTableState";
 import DataTable from "@/components/DataTable";
 import { StockCount } from "@/lib/types";
+import { getStockCountQueryOptions } from "@/api/query";
 const columns = [
   { header: "Code", accessor: "inventory_count_number", isFirstColumn: true },
   { header: "Warehouse", accessor: "warehouse_code" },
@@ -39,22 +38,9 @@ const StockCountTable = () => {
     data: stockCountList,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["stockCountList", search, currentPage],
-    queryFn: () => {
-      const searchParam = search.searchValue
-        ? `${search.searchKey}=${search.searchValue}&`
-        : "";
-
-      return getStockCount(
-        `/inventory_count?${searchParam}limit=15&page=${currentPage}`,
-        setError,
-        setTotalPage
-      );
-    },
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(
+    getStockCountQueryOptions(search, currentPage, setTotalPage, setError)
+  );
 
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white border border-Primary-15  p-4 rounded-2xl">

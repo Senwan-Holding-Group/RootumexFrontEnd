@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "../ui/button";
 import {
@@ -14,13 +13,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
   faCalendarCirclePlus,
   faSpinner,
-  faSquareCheck,
-  faSquareExclamation,
   faTrashCan,
 } from "@fortawesome/pro-regular-svg-icons";
 import { format } from "date-fns";
 import { Calendar } from "../calendar";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useOutletContext } from "react-router-dom";
 import { Dependencies, Docline } from "@/lib/types";
 import { useState } from "react";
@@ -30,7 +26,6 @@ import {
   CreateTransferRequest,
   CreateTransferSchema,
 } from "@/lib/formsValidation";
-import { postTransfer } from "@/api/client";
 import { cn } from "@/lib/utils";
 import { Input } from "../ui/input";
 import {
@@ -44,15 +39,13 @@ import { Label } from "../ui/label";
 import ItemSelect from "../ItemsSelect";
 import { DialogClose } from "../ui/dialog";
 import { TransferProps } from "@/Documents/Requests/Warehouse Transfer/CreateTransfer";
-import { useStateContext } from "@/context/useStateContext";
 import { useAuth } from "@/api/Auth/useAuth";
+import { useCreateTransfer } from "@/api/query";
 
 const CreateTransferForm = ({ type }: TransferProps) => {
-  const queryClient = useQueryClient();
   const { user } = useAuth();
   const dependencies = useOutletContext<Dependencies>();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-  const { setDialogOpen, setDialogConfig } = useStateContext();
 
   const form = useForm<CreateTransferRequest>({
     resolver: zodResolver(CreateTransferSchema),
@@ -65,49 +58,11 @@ const CreateTransferForm = ({ type }: TransferProps) => {
       transferLines: [],
     },
   });
-  const { mutate: createTransfer, isPending } = useMutation({
-    mutationFn: (data: CreateTransferRequest) =>
-      postTransfer(
-        `${type === "WHS" ? "/transfer" : "/site_transfer_request"}`,
-        data
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [`${type === "WHS" ? "transfer" : "siteTransfer"}List`],
-      });
-      form.reset();
-      setdocLine([]);
-      setDialogConfig({
-        title: "Transfer created successfully!",
-        description: "Your transfer is successfully created ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Transfer not created",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: createTransfer, isPending } = useCreateTransfer(
+    form,
+    setdocLine,
+    type
+  );
   const updateLineQuantity = (line: number, newQuantity: string) => {
     const quantity = parseFloat(newQuantity);
     if (isNaN(quantity)) return;
@@ -252,37 +207,6 @@ const CreateTransferForm = ({ type }: TransferProps) => {
                   </FormItem>
                 )}
               />
-              {/* <FormField
-                control={form.control}
-                name="from"
-                render={({ field }) => (
-                  <FormItem className="space-y-1">
-                    <FormLabel className="text-Gray-500   ml-2 font-bold text-sm leading-CS h-[1.1875rem]">
-                      From
-                      <FormMessage />
-                    </FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isPending}>
-                        <SelectTrigger className=" border w-full h-10  inline-flex p-2 disabled:bg-Gray-50 disabled:text-Gray-300 border-Secondary-500 font-medium text-base leading-CS ">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {dependencies?.warehouses.map((whs) => (
-                            <SelectItem
-                              key={whs.warehouseCode}
-                              value={whs.warehouseCode}>
-                              {whs.warehouseName + "-" + whs.warehouseCode}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
-              /> */}
               <FormField
                 control={form.control}
                 name="to"
@@ -301,13 +225,21 @@ const CreateTransferForm = ({ type }: TransferProps) => {
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
-                          {dependencies?.warehouses.map((whs) => (
-                            <SelectItem
-                              key={whs.warehouseCode}
-                              value={whs.warehouseCode}>
-                              {whs.warehouseName + "-" + whs.warehouseCode}
-                            </SelectItem>
-                          ))}
+                          {type === "SITE"
+                            ? dependencies?.sites.map((whs) => (
+                                <SelectItem
+                                  key={whs.warehouseCode}
+                                  value={whs.warehouseCode}>
+                                  {whs.warehouseName + "-" + whs.warehouseCode}
+                                </SelectItem>
+                              ))
+                            : dependencies?.warehouses.map((whs) => (
+                                <SelectItem
+                                  key={whs.warehouseCode}
+                                  value={whs.warehouseCode}>
+                                  {whs.warehouseName + "-" + whs.warehouseCode}
+                                </SelectItem>
+                              ))}
                         </SelectContent>
                       </Select>
                     </FormControl>

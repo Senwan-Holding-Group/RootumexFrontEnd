@@ -1,17 +1,24 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 export const capitalize = (str: string) =>
   str?.replace(/\b\w/g, (substr) => substr.toUpperCase());
+export const capitalizeCsSs = (str: string) =>
+  str.charAt(0).toUpperCase() +
+  str
+    .slice(1)
+    .replace(/([A-Z])/g, " $1")
+    .replace(/_/g, " ");
+
 type FormatNumberOptions = {
   decimals?: number;
 };
- export const calculateLineTotal = (quantity: number, price: number): number => {
-    return Number((Math.abs(quantity) * price).toFixed(4));
-  };
+export const calculateLineTotal = (quantity: number, price: number): number => {
+  return Number((Math.abs(quantity) * price).toFixed(4));
+};
 export const numberWithCommas = (
   value: number | string | null | undefined,
   options: FormatNumberOptions = {}
@@ -28,7 +35,6 @@ export const numberWithCommas = (
       return String(value);
     }
 
-
     const parts = number.toFixed(decimals).split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
@@ -40,7 +46,7 @@ export const numberWithCommas = (
     return parts[0];
   } catch (error) {
     console.log(error);
-    
+
     return String(value ?? "");
   }
 };

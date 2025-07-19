@@ -1,14 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { postVendor } from "@/api/client";
-import { useStateContext } from "@/context/useStateContext";
 import { CreateVendorRequest, CreateVendorSchema } from "@/lib/formsValidation";
-import {
-  faSpinner,
-  faSquareCheck,
-  faSquareExclamation,
-} from "@fortawesome/pro-regular-svg-icons";
+import { faSpinner } from "@fortawesome/pro-regular-svg-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import {
   Form,
@@ -30,11 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { useCreateVendor } from "@/api/query";
 
 const CreateVendorForm = () => {
-  const queryClient = useQueryClient();
-  const { setDialogOpen, setDialogConfig } = useStateContext();
-
   const form = useForm<CreateVendorRequest>({
     resolver: zodResolver(CreateVendorSchema),
     defaultValues: {
@@ -45,42 +35,7 @@ const CreateVendorForm = () => {
       vendorType: "",
     },
   });
-  const { mutate: createVendor, isPending } = useMutation({
-    mutationFn: (data: CreateVendorRequest) => postVendor("/vendor", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendorList"] });
-      form.reset();
-      setDialogConfig({
-        title: "Vendor created successfully!",
-        description: "Your vendor is successfully created ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Vendor not created",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: createVendor, isPending } = useCreateVendor(form);
   const onSubmit = async (values: CreateVendorRequest) => {
     createVendor(values);
   };

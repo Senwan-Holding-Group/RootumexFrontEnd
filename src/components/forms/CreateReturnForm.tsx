@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { postReturn } from "@/api/client";
 import {
   CreatePORequest,
   CreateReturnRequest,
@@ -10,12 +8,9 @@ import { calculateLineTotal, cn, numberWithCommas } from "@/lib/utils";
 import {
   faCalendarCirclePlus,
   faSpinner,
-  faSquareCheck,
-  faSquareExclamation,
   faTrashCan,
 } from "@fortawesome/pro-regular-svg-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -44,14 +39,12 @@ import {
 import { Label } from "../ui/label";
 import ItemSelect from "../ItemsSelect";
 import { DialogClose } from "../ui/dialog";
-import { useStateContext } from "@/context/useStateContext";
 import { useAuth } from "@/api/Auth/useAuth";
+import { useCreateReturn } from "@/api/query";
 
 const CreateReturnForm = () => {
-  const queryClient = useQueryClient();
-  const { setDialogOpen, setDialogConfig } = useStateContext();
-  const { user } = useAuth();
 
+  const { user } = useAuth();
   const dependencies = useOutletContext<Dependencies>();
   const [docLine, setdocLine] = useState<Docline[]>([]);
   const form = useForm<CreateReturnRequest>({
@@ -68,44 +61,7 @@ const CreateReturnForm = () => {
       poLines: [],
     },
   });
-  const { mutate: createReturn, isPending } = useMutation({
-    mutationFn: (data: CreateReturnRequest) =>
-      postReturn("/return_request", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["returnList"] });
-      form.reset();
-      setdocLine([]);
-      setDialogConfig({
-        title: "Return created successfully!",
-        description: "Your return request is successfully created ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Return request not created",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: createReturn, isPending } = useCreateReturn(form, setdocLine);
   const calculateDocumentTotal = useCallback(() => {
     return docLine?.reduce((sum, line) => sum + (line.total_price || 0), 0);
   }, [docLine]);
@@ -331,37 +287,7 @@ const CreateReturnForm = () => {
                   </FormItem>
                 )}
               />
-              {/* <FormField
-                control={form.control}
-                name="warehouseCode"
-                render={({ field }) => (
-                  <FormItem className="space-y-1">
-                    <FormLabel className="text-Gray-500   ml-2 font-bold text-sm leading-CS h-[1.1875rem]">
-                      Warehouse
-                      <FormMessage />
-                    </FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isPending}>
-                        <SelectTrigger className=" border w-full h-10  inline-flex p-2 disabled:bg-Gray-50 disabled:text-Gray-300 border-Secondary-500 font-medium text-base leading-CS ">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {dependencies?.warehouses.map((whs) => (
-                            <SelectItem
-                              key={whs.warehouseCode}
-                              value={whs.warehouseCode}>
-                              {whs.warehouseName + "-" + whs.warehouseCode}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
-              /> */}
+
             </div>
             <div className="w-1/3 space-y-4">
               <FormField
@@ -374,12 +300,23 @@ const CreateReturnForm = () => {
                       <FormMessage />
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        disabled={isPending}
-                        placeholder="Project name"
-                        {...field}
-                        className="border w-full inline-flex disabled:bg-Gray-50 disabled:text-Gray-300 border-Secondary-500 font-medium text-base leading-CS"
-                      />
+                       <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isPending}>
+                        <SelectTrigger className=" border w-full h-10  inline-flex p-2 disabled:bg-Gray-50 disabled:text-Gray-300 border-Secondary-500 font-medium text-base leading-CS ">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dependencies?.sites.map((whs) => (
+                            <SelectItem
+                              key={whs.warehouseCode}
+                              value={whs.warehouseCode}>
+                              {whs.warehouseName + "-" + whs.warehouseCode}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                   </FormItem>
                 )}

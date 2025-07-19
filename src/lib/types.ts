@@ -38,10 +38,16 @@ export type Item = {
   status: boolean;
   barcode: string;
   price: number;
+  item_locations: {
+    asigned_quantity: number;
+    project_code: string;
+    quantity: number;
+    warehouse: string;
+    zone: string;
+  }[];
   created_at: string;
   updated_at: string;
   total_quantity: number;
-  item_locations: string;
 };
 export type StockCount = {
   remark: string;
@@ -222,12 +228,22 @@ export type Dependencies = {
       warehouseType: string;
     }
   ];
+  sites: [
+    {
+      warehouseCode: string;
+      warehouseName: string;
+      warehouseType: string;
+    }
+  ];
   vendors: [
     {
       vendorCode: string;
       vendorName: string;
       vendorType: string;
       vendorAddress: string;
+      vendorNameEng: string;
+      contactNumber: string;
+      status: string;
     }
   ];
 };

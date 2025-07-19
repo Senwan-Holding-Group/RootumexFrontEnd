@@ -13,49 +13,62 @@
 @theme {
   --font-Nunito: "Nunito Sans", sans-serif;
   --text-sm: 0.875rem;
-  --leading-CS:1.375rem;
-  --radius-CS:0.875rem;
-  --breakpoint-3xl:1580px;
-  --color-Primary-5: #EFF2F4;
-  --color-Primary-15: #E0E5EA;
-  --color-Primary-50: #D0D8DF;
-  --color-Primary-100: #B1BECA;
-  --color-Primary-200: #899EAF;
-  --color-Primary-300: #627E95;
-  --color-Primary-400: #3B5D7B;
-  --color-Primary-500: #143D60;
+  --leading-CS: 1.375rem;
+  --radius-CS: 0.875rem;
+  --breakpoint-3xl: 1580px;
+  --color-Primary-5: #eff2f4;
+  --color-Primary-15: #e0e5ea;
+  --color-Primary-50: #d0d8df;
+  --color-Primary-100: #b1beca;
+  --color-Primary-200: #899eaf;
+  --color-Primary-300: #627e95;
+  --color-Primary-400: #3b5d7b;
+  --color-Primary-500: #143d60;
   --color-Primary-600: #113350;
-  --color-Primary-700: #0D2940;
-  --color-Secondary-50: #FDFCFA;
-  --color-Secondary-100: #FCFAF7;
-  --color-Secondary-200: #FAF7F3;
-  --color-Secondary-300: #F8F4EF;
-  --color-Secondary-400: #F7F2EB;
-  --color-Secondary-500: #F5EFE7;
-  --color-Secondary-600: #CCC7C0;
-  --color-Secondary-700: #A39F9A;
-  --color-Secondary-800: #7B7874;
-  --color-Gray-50: #DDDDDD;
-  --color-Gray-100: #C6C6C7;
-  --color-Gray-200: #A9A9AA;
-  --color-Gray-300: #8D8D8E;
+  --color-Primary-700: #0d2940;
+  --color-Secondary-50: #fdfcfa;
+  --color-Secondary-100: #fcfaf7;
+  --color-Secondary-200: #faf7f3;
+  --color-Secondary-300: #f8f4ef;
+  --color-Secondary-400: #f7f2eb;
+  --color-Secondary-500: #f5efe7;
+  --color-Secondary-600: #ccc7c0;
+  --color-Secondary-700: #a39f9a;
+  --color-Secondary-800: #7b7874;
+  --color-Gray-50: #dddddd;
+  --color-Gray-100: #c6c6c7;
+  --color-Gray-200: #a9a9aa;
+  --color-Gray-300: #8d8d8e;
   --color-Gray-400: #717172;
   --color-Gray-500: #545456;
   --color-Gray-600: #464648;
   --color-Gray-700: #383839;
-  --color-Gray-800: #2A2A2B;
-  --color-Error-50: #FFD8D6;
-  --color-Error-100: #FFBEBA;
-  --color-Error-500: #FF3B30;
-  --color-Error-600: #DD4433;
-  --color-Success-50: #D5E7E2;
-  --color-Success-100: #AACEC5;
-  --color-Success-500: #006C50;
-  --color-Success-600: #005A43;
-  --color-RT-Black: #1E201E;
-
+  --color-Gray-800: #2a2a2b;
+  --color-Error-50: #ffd8d6;
+  --color-Error-100: #ffbeba;
+  --color-Error-500: #ff3b30;
+  --color-Error-600: #dd4433;
+  --color-Success-50: #d5e7e2;
+  --color-Success-100: #aacec5;
+  --color-Success-500: #006c50;
+  --color-Success-600: #005a43;
+  --color-RT-Black: #1e201e;
 }
+@media print {
+  @page {
+    size: A4 landscape;
+    margin-top: 1cm;
+    margin-bottom: 1.5cm;
+    @bottom-center {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 12px;
+    }
+  }
 
+  @page: first {
+    margin-top: 0;
+  }
+}
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

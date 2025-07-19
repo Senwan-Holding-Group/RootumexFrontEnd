@@ -10,14 +10,14 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { itemsMenu } from "@/lib/constants";
-import { useState } from "react";
 import { Docline, Item } from "@/lib/types";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useStateContext } from "@/context/useStateContext";
 import DataRenderer from "./DataRenderer";
 import { getItemsMasterData } from "@/api/client";
 import Search from "./Search";
 import { faGrid2Plus } from "@fortawesome/pro-regular-svg-icons";
+import { useTableState } from "@/lib/hooks/useTableState";
 
 type ItemSelectProps = {
   state: Docline[];
@@ -26,16 +26,15 @@ type ItemSelectProps = {
 
 const ItemSelect = ({ setState, state }: ItemSelectProps) => {
   const { setError } = useStateContext();
-
-  const [search, setSearch] = useState({
-    searchKey: itemsMenu[0].value,
-    searchValue: "",
+  const { search, setSearch } = useTableState({
+    initialSearchKey: itemsMenu[0].value,
   });
   const handleItemClick = (item: Item) => {
     const existingItemIndex = state.findIndex(
-      (value) => String(value.itemCode) === item.itemCode && value.status === "O"
+      (value) =>
+        String(value.itemCode) === item.itemCode && value.status === "O"
     );
-
+    console.log("existingItemIndex", existingItemIndex);
     if (existingItemIndex !== -1) {
       setState((prev) => {
         const newState = [...prev];
@@ -70,20 +69,28 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
     }
   };
   const {
-    data: itemSelectList,
+    data,
+    fetchNextPage,
+    hasNextPage,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["itemSelectList", search],
-    queryFn: () => {
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["itemSelectList", search.searchValue],
+    queryFn: ({ pageParam = 1 }) => {
       const searchParam = search.searchValue
-        ? `?${search.searchKey}=${search.searchValue}`
-        : "";
-     return getItemsMasterData(`/item${searchParam}`, setError);
+        ? `?${search.searchKey}=${search.searchValue}&page=${pageParam}&limit=10`
+        : `?page=${pageParam}&limit=10`;
+      return getItemsMasterData(`/item${searchParam}`, setError);
     },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 10 ? allPages.length + 1 : undefined;
+    },
+    initialPageParam: 1,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
+  const itemSelectList = data?.pages.flatMap((page) => page) ?? [];
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -104,7 +111,6 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
             <span className="text-2xl leading-CS font-bold text-Primary-500">
               Select Items
             </span>
-
             <Search
               menuList={itemsMenu}
               search={search}
@@ -114,7 +120,9 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
         </DialogHeader>
         <div className=" px-2 mb- h-[17rem] w-full ">
           <div className="border w-full overflow-scroll h-full  border-Secondary-500 rounded-lg">
-            <DataRenderer isLoading={isFetching} isError={isError}>
+            <DataRenderer
+              isLoading={!isFetchingNextPage && isFetching}
+              isError={isError}>
               <table className="w-full ">
                 <thead className="bg-Primary-15">
                   <tr className="text-nowrap   text-base  text-left font-bold text-Primary-500">
@@ -124,7 +132,7 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
                   </tr>
                 </thead>
                 <tbody className=" [&_tr:last-child]:border-0">
-                  {itemSelectList?.map((item) => (
+                  {itemSelectList.map((item) => (
                     <tr
                       key={item.itemCode}
                       onClick={() => handleItemClick(item)}
@@ -138,6 +146,18 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
                       <td className="px-6 py-3">{item.barcode}</td>
                     </tr>
                   ))}
+                  {hasNextPage && (
+                    <tr>
+                      <td colSpan={3} className="text-center py-4">
+                        <Button
+                          onClick={() => fetchNextPage()}
+                          disabled={isFetchingNextPage}
+                          className="bg-Primary-500 text-white rounded-lg">
+                          Load More Items
+                        </Button>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </DataRenderer>

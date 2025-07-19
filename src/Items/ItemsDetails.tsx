@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import api from "@/api";
 import { getItemDetails, putItem } from "@/api/client";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,13 @@ import { useStateContext } from "@/context/useStateContext";
 import { EditItemRequest, EditItemSchema } from "@/lib/formsValidation";
 import { Dependencies } from "@/lib/types";
 import {
+  faCheck,
   faChevronLeft,
+  faPen,
   faSpinner,
   faSquareCheck,
   faSquareExclamation,
+  faXmark,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,14 +45,27 @@ const ItemsDetails = () => {
   const { setError, setDialogConfig, setDialogOpen } = useStateContext();
   const queryClient = useQueryClient();
   const dependencies = useOutletContext<Dependencies>();
-
   const [isEdit, setisEdit] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<string | null>(null);
+  const [tempAssignedQty, setTempAssignedQty] = useState<number>(0);
+
+  const { mutate: updateAssignedQty, isPending: isUpdating } = useMutation({
+    mutationFn: (data: {
+      warehouse_code: string;
+      project_code: string;
+      quantity: number;
+    }) => api.patch(`/item/reserved_goods/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["itemDetails", { id }] });
+      setEditingLocation(null);
+    },
+  });
   const {
     data: itemDetails,
     isFetching,
     isError,
   } = useQuery({
-    queryKey: ["itemDetails", id],
+    queryKey: ["itemDetails", { id }],
     queryFn: () => getItemDetails(`/item/${id}`, setError),
     refetchOnWindowFocus: false,
     refetchOnMount: true,
@@ -423,10 +440,16 @@ const ItemsDetails = () => {
                   </div>
                   <div className=" w-1/3 space-y-4">
                     <div className="space-y-1  ">
-                      <Label className="text-Gray-500 ml-2 font-bold text-sm leading-CS h-[1.1875rem]">
+                      <Label
+                        className={`${
+                          isEdit ? "text-Gray-300" : "text-Gray-500"
+                        } ml-2 font-bold text-sm leading-CS h-[1.1875rem]`}>
                         Total Quantity
                       </Label>
-                      <span className="p-2 rounded-CS border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10 ">
+                      <span
+                        className={`${
+                          isEdit ? "bg-Gray-50 text-Gray-300" : "text-Gray-500"
+                        } p-2 rounded-CS border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10`}>
                         {itemDetails?.total_quantity}
                       </span>
                     </div>
@@ -462,10 +485,16 @@ const ItemsDetails = () => {
                       )}
                     />
                     <div className="space-y-1  ">
-                      <Label className="text-Gray-500 ml-2 font-bold text-sm leading-CS h-[1.1875rem]">
+                      <Label
+                        className={`${
+                          isEdit ? "text-Gray-300" : "text-Gray-500"
+                        } ml-2 font-bold text-sm leading-CS h-[1.1875rem]`}>
                         Barcode
                       </Label>
-                      <span className="p-2 rounded-CS border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10 ">
+                      <span
+                        className={`${
+                          isEdit ? "bg-Gray-50 text-Gray-300" : "text-Gray-500"
+                        } p-2 rounded-CS border w-full inline-flex border-Secondary-500 font-medium text-base leading-CS h-10`}>
                         {itemDetails?.barcode}
                       </span>
                     </div>
@@ -481,32 +510,113 @@ const ItemsDetails = () => {
                     <thead className="sticky top-0 w-full bg-Primary-5">
                       <tr className="text-nowrap font-semibold  text-base/CS   text-left text-Primary-400">
                         <th className="pr-6 pl-4 py-3  rounded-tl-xl">
-                          Quantity
+                          Warehouse
                         </th>
-                        <th className="pr-6 pl-4 py-3">Project Name</th>
-                        <th className="pr-6 pl-4 py-3">Warehouse</th>
-                        <th className="pr-6 pl-4 py-3 rounded-tr-xl">
-                          Location
+                        <th className="pr-6 pl-4 py-3">Location</th>
+                        <th className="pr-6 pl-4 py-3">QTY</th>
+                        <th className="pr-6 pl-4 py-3">Project name</th>
+                        <th className="pr-6 pl-4 py-3 text-center rounded-tr-xl">
+                          Assigned QTY
                         </th>
                       </tr>
                     </thead>
                     <tbody className=" [&_tr:last-child]:border-0 ">
-                      <tr className="text-RT-Black  text-nowrap font-medium text-base/CS border-b-1 border-Primary-15 transition duration-300 ease-in-out hover:bg-gray-100 cursor-pointer">
-                        <td className="pr-6 pl-4 py-3">560</td>
-                        <td className="pr-6 pl-4 py-3">General</td>
-                        <td className="pr-6 pl-4 py-3">MMS</td>
-                        <td className="pr-6 pl-4 py-3">
-                          SK02-ZN01-RK03-RO4-C02R04
-                        </td>
-                      </tr>
-                      <tr className="text-RT-Black  text-nowrap font-medium text-base/CS border-b-1 border-Primary-15 transition duration-300 ease-in-out hover:bg-gray-100 cursor-pointer">
-                        <td className="pr-6 pl-4 py-3">780</td>
-                        <td className="pr-6 pl-4 py-3">General</td>
-                        <td className="pr-6 pl-4 py-3">MMF</td>
-                        <td className="pr-6 pl-4 py-3">
-                          SK02-ZN01-RK08-R08-C07R08
-                        </td>
-                      </tr>
+                      {!itemDetails?.item_locations?.length ? (
+                        <tr className="p-6">
+                          <td colSpan={5} className="text-center p-6">
+                            No item locations assigned.
+                          </td>
+                        </tr>
+                      ) : (
+                        itemDetails?.item_locations.map((item) => (
+                          <tr className="text-RT-Black  text-nowrap font-medium text-base/CS border-b-1 border-Primary-15 transition duration-300 ease-in-out hover:bg-gray-100 cursor-pointer">
+                            <td className="pr-6 pl-4 py-3">{item.warehouse}</td>
+                            <td className="pr-6 pl-4 py-3">{item.zone}</td>
+                            <td className="pr-6 pl-4 py-3">{item.quantity}</td>
+                            <td className="pr-6 pl-4 py-3">
+                              {item.project_code}
+                            </td>
+                            <td className="flex pr-6 pl-4 py-3 items-center justify-center  ">
+                              {editingLocation ===
+                              `${item.warehouse}-${item.project_code}` ? (
+                                <div className="flex gap-x-4 w-[17.5rem] justify-center ">
+                                  <Input
+                                    type="number"
+                                    value={tempAssignedQty}
+                                    onChange={(e) =>
+                                      setTempAssignedQty(Number(e.target.value))
+                                    }
+                                    max={item.quantity}
+                                    min={0}
+                                    className="w-20 h-8"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      if (
+                                        tempAssignedQty <= item.asigned_quantity
+                                      ) {
+                                        updateAssignedQty({
+                                          warehouse_code: item.warehouse,
+                                          project_code: item.project_code,
+                                          quantity: tempAssignedQty,
+                                        });
+                                      }
+                                    }}
+                                    disabled={
+                                      isUpdating ||
+                                      tempAssignedQty > item.asigned_quantity
+                                    }
+                                    className="h-8 px-2">
+                                    {isUpdating ? (
+                                      <FontAwesomeIcon
+                                        icon={faSpinner}
+                                        spin
+                                        className="w-3 h-3"
+                                      />
+                                    ) : (
+                                      <FontAwesomeIcon
+                                        icon={faCheck}
+                                        className="w-3 h-3"
+                                      />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setEditingLocation(null)}
+                                    className="h-8 px-2">
+                                    <FontAwesomeIcon
+                                      icon={faXmark}
+                                      className="w-3 h-3"
+                                    />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex gap-x-4 items-center justify-center w-[17.5rem] ">
+                                  <span>{item.asigned_quantity}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={item.project_code === "General"}
+                                    onClick={() => {
+                                      setEditingLocation(
+                                        `${item.warehouse}-${item.project_code}`
+                                      );
+                                      setTempAssignedQty(item.asigned_quantity);
+                                    }}
+                                    className="h-8 px-2 ml-2 border disabled:cursor-not-allowed border-Primary-5">
+                                    <FontAwesomeIcon
+                                      icon={faPen}
+                                      className="w-3 h-3 text-Primary-500"
+                                    />
+                                  </Button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -560,25 +670,18 @@ const ItemsDetails = () => {
           </DataRenderer>
           <div className="flex justify-end gap-x-4 px-6 py-4 border-t h-[4.5rem] border-Primary-15">
             {!isEdit ? (
-              <>
-                <Button
-                  disabled={isFetching}
-                  className=" bg-transparent w-[10rem] rounded-2xl font-bold text-Error-600 border border-Secondary-500  ">
-                  Delete
-                </Button>
-                <Button
-                  disabled={isFetching}
-                  type="button"
-                  onClick={(e) => {
-                    if (!isEdit) {
-                      e.preventDefault();
-                      setisEdit(true);
-                    }
-                  }}
-                  className="  rounded-2xl w-[10rem]">
-                  Edit
-                </Button>
-              </>
+              <Button
+                disabled={isFetching}
+                type="button"
+                onClick={(e) => {
+                  if (!isEdit) {
+                    e.preventDefault();
+                    setisEdit(true);
+                  }
+                }}
+                className="rounded-2xl w-[10rem]">
+                Edit
+              </Button>
             ) : (
               <>
                 <Button

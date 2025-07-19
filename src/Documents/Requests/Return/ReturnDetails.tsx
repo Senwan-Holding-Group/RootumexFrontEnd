@@ -1,8 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getReturnDetails, postCancelReturn, putReturn } from "@/api/client";
+import {
+  getReturnDetailsQueryOptions,
+  useCancelReturn,
+  useUpdateReurn,
+} from "@/api/query";
 import { Calendar } from "@/components/calendar";
 import DataRenderer from "@/components/DataRenderer";
 import ItemSelect from "@/components/ItemsSelect";
+import POLayout from "@/components/Printlayout/POLayout";
+import Print from "@/components/Printlayout/Print";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -19,34 +24,39 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useStateContext } from "@/context/useStateContext";
 import { EditReturnRequest, EditReturnSchema } from "@/lib/formsValidation";
-import { Docline } from "@/lib/types";
+import { Dependencies, Docline } from "@/lib/types";
 import { calculateLineTotal, cn, numberWithCommas } from "@/lib/utils";
 import {
   faCalendarCirclePlus,
   faChevronLeft,
   faSpinner,
-  faSquareCheck,
   faSquareExclamation,
   faTrashCan,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { Link, useOutletContext, useParams } from "react-router-dom";
 
 const ReturnDetails = () => {
   const { id } = useParams();
+  const dependencies = useOutletContext<Dependencies>();
   const { setError, setDialogConfig, setDialogOpen } = useStateContext();
-  // const dependencies = useOutletContext<Dependencies>();
-  const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-
   const [isEdit, setisEdit] = useState(false);
+
   const form = useForm<EditReturnRequest>({
     resolver: zodResolver(EditReturnSchema),
     defaultValues: {
@@ -61,16 +71,14 @@ const ReturnDetails = () => {
     data: returnDetails,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["returnDetails", id],
-    queryFn: () => getReturnDetails(`/return_request/${id}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(getReturnDetailsQueryOptions(setError, id));
+
   const calculateDocumentTotal = useCallback(() => {
     return docLine?.reduce((sum, line) => sum + (line.total_price || 0), 0);
   }, [docLine]);
+
   const documentTotal = calculateDocumentTotal();
+
   const updateLineQuantity = (line: number, newQuantity: string) => {
     const quantity = parseFloat(newQuantity);
     if (isNaN(quantity)) return;
@@ -87,6 +95,7 @@ const ReturnDetails = () => {
       })
     );
   };
+
   useEffect(() => {
     if (returnDetails) {
       form.reset({
@@ -108,79 +117,9 @@ const ReturnDetails = () => {
     }
   }, [form, returnDetails]);
 
-  const { mutate: editReturn, isPending } = useMutation({
-    mutationFn: (data: EditReturnRequest) =>
-      putReturn(`/return_request/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["returnDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Return request  updated successfully!",
-        description: "Your return request is successfully updated ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Return request was not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
-  const { mutate: cancelReturn, isPending: isClosing } = useMutation({
-    mutationFn: () => postCancelReturn(`/return_request/cancel/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["returnDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Return request canceled successfully!",
-        description: "Your return request is successfully canceled ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Return request not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: editReturn, isPending } = useUpdateReurn(id);
+  const { mutate: cancelReturn, isPending: isCancelling } = useCancelReturn(id);
+
   const onSubmit = async (values: EditReturnRequest) => {
     const newValues = {
       ...values,
@@ -200,21 +139,26 @@ const ReturnDetails = () => {
   return (
     <Form {...form}>
       <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
-        <Loader enable={isPending} />
+        <Loader enable={isPending || isCancelling} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
           <DataRenderer isLoading={isFetching} isError={isError}>
-            <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
-              <Link
-                to={"/rootumex/documents/requests/return"}
-                className="size-10 border flex items-center   cursor-pointer border-Secondary-500 rounded-CS p-2">
-                <FontAwesomeIcon
-                  className="size-6 text-Primary-500"
-                  icon={faChevronLeft}
-                />
-              </Link>
-              <span className="text-2xl leading-CS  font-bold  text-RT-Black">
-                {returnDetails?.code}
-              </span>
+            <div className="px-6 py-4 flex  justify-between h-[4.5rem] border-b border-Primary-15">
+              <div className="flex gap-x-6 items-center">
+                <Link
+                  to={"/rootumex/documents/requests/return"}
+                  className="size-10 border flex items-center   cursor-pointer border-Secondary-500 rounded-CS p-2">
+                  <FontAwesomeIcon
+                    className="size-6 text-Primary-500"
+                    icon={faChevronLeft}
+                  />
+                </Link>
+                <span className="text-2xl leading-CS  font-bold  text-RT-Black">
+                  {returnDetails?.code}
+                </span>
+              </div>
+              <Print btnText={"return"}>
+                {returnDetails && <POLayout data={returnDetails} type="Return" />}
+              </Print>
             </div>
             <div className="flex-1 w-full overflow-scroll p-4 flex flex-col gap-y-10 ">
               <div className="space-y-4 min-w-[80rem]">
@@ -343,38 +287,6 @@ const ReturnDetails = () => {
                         {returnDetails?.warehouseCode}
                       </span>
                     </div>
-                    {/* <FormField
-                      control={form.control}
-                      name="warehouseCode"
-                      render={({ field }) => (
-                        <FormItem className="space-y-1">
-                          <FormLabel className="text-Gray-500   ml-2 font-bold text-sm leading-CS h-[1.1875rem]">
-                            Warehouse
-                          </FormLabel>
-                          <FormControl>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              disabled={isPending || !isEdit}>
-                              <SelectTrigger className=" border w-full h-10  inline-flex p-2 disabled:opacity-100 border-Secondary-500 font-medium text-base leading-CS ">
-                                <SelectValue placeholder="Select" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {dependencies?.warehouses?.map((whs) => (
-                                  <SelectItem
-                                    key={whs.warehouseCode}
-                                    value={whs.warehouseCode}>
-                                    {whs.warehouseName +
-                                      "-" +
-                                      whs.warehouseCode}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    /> */}
                   </div>
                   <div className=" w-1/3 space-y-4">
                     <div className="space-y-1  ">
@@ -415,12 +327,25 @@ const ReturnDetails = () => {
                             Project name
                           </FormLabel>
                           <FormControl>
-                            <Input
-                              disabled={isPending || !isEdit}
-                              placeholder="Project name"
-                              {...field}
-                              className="border w-full inline-flex disabled:opacity-100 border-Secondary-500 font-medium text-base leading-CS"
-                            />
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isPending || !isEdit}>
+                              <SelectTrigger className=" border w-full h-10  inline-flex p-2 disabled:opacity-100 border-Secondary-500 font-medium text-base leading-CS ">
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {dependencies?.sites.map((whs) => (
+                                  <SelectItem
+                                    key={whs.warehouseCode}
+                                    value={whs.warehouseCode}>
+                                    {whs.warehouseName +
+                                      "-" +
+                                      whs.warehouseCode}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                         </FormItem>
                       )}
@@ -557,7 +482,7 @@ const ReturnDetails = () => {
             {!isEdit ? (
               <>
                 <Button
-                  disabled={isFetching || isClosing}
+                  disabled={isFetching || isCancelling}
                   onClick={() => {
                     setDialogOpen(true);
                     setDialogConfig({
@@ -600,7 +525,7 @@ const ReturnDetails = () => {
                   Cancel
                 </Button>
                 <Button
-                  disabled={isPending || isClosing}
+                  disabled={isPending || isCancelling}
                   type="submit"
                   onClick={() => {
                     setDialogOpen(true);

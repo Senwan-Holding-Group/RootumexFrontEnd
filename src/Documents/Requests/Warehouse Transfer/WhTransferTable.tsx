@@ -6,11 +6,11 @@ import { useStateContext } from "@/context/useStateContext";
 import { useNavigate } from "react-router-dom";
 import { whsTransferRequestMenu } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
-import { getTransfer } from "@/api/client";
 import { format } from "date-fns";
 import { useTableState } from "@/lib/hooks/useTableState";
 import { WhsTransfer } from "@/lib/types";
 import DataTable from "@/components/DataTable";
+import { getTransferQueryOptions } from "@/api/query";
 const columns = [
   { header: "Code", accessor: "transferNumber", isFirstColumn: true },
   {
@@ -52,21 +52,9 @@ const WhTransferTable = () => {
     data: transferList,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["transferList", search.searchValue, currentPage],
-    queryFn: () => {
-      const searchParam = search.searchValue
-        ? `${search.searchKey}=${search.searchValue}&`
-        : "";
-      return getTransfer(
-        `/transfer?${searchParam}limit=5&page=${currentPage}`,
-        setError,
-        setTotalPage
-      );
-    },
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(
+    getTransferQueryOptions(search, currentPage, setTotalPage, setError, "WHS")
+  );
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
       <div className="flex w-full   flex-col sm:flex-row justify-between gap-2 ">

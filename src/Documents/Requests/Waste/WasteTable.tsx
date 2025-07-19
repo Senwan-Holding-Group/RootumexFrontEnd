@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getWaste } from "@/api/client";
+import { getWasteQueryOptions } from "@/api/query";
 import DataTable from "@/components/DataTable";
 import Search from "@/components/Search";
 import { useStateContext } from "@/context/useStateContext";
@@ -40,22 +40,7 @@ const WasteTable = () => {
     data: wasteList,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["wasteList", search, currentPage],
-    queryFn: () =>
-    { 
-      const searchParam = search.searchValue
-        ? `${search.searchKey}=${search.searchValue}&`
-        : "";
-      return getWaste(
-        `/waste?${searchParam}perPage=15&page=${currentPage}`,
-        setError,
-        setTotalPage
-      );
-    },
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(getWasteQueryOptions(search, currentPage, setTotalPage, setError));
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2 bg-white  border border-Primary-15 p-4 rounded-2xl">
       <Search search={search} setSearch={setSearch} menuList={wasteMenu} />

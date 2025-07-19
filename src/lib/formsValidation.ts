@@ -83,21 +83,22 @@ export const EditPOSchema = z.object({
   ),
 });
 export type EditPORequest = z.infer<typeof EditPOSchema>;
-export const EditGRPOSchema = z.object({
-  warehouseCode: z.string(),
-  projectCode: z.string(),
-  remark: z.string(),
-  poLines: z.array(
-    z.object({
-      itemCode: z.string(),
-      description: z.string(),
-      price: z.number(),
-      uomCode: z.string(),
-      quantity: z.number(),
-    })
-  ),
-});
-export type EditGRPORequest = z.infer<typeof EditGRPOSchema>;
+
+// export const EditGRPOSchema = z.object({
+//   warehouseCode: z.string(),
+//   projectCode: z.string(),
+//   remark: z.string(),
+//   poLines: z.array(
+//     z.object({
+//       itemCode: z.string(),
+//       description: z.string(),
+//       price: z.number(),
+//       uomCode: z.string(),
+//       quantity: z.number(),
+//     })
+//   ),
+// });
+// export type EditGRPORequest = z.infer<typeof EditGRPOSchema>;
 
 export const CreateReturnSchema = z.object({
   vendorCode: z.string().min(1, { message: "Vendor Code is required" }),
@@ -177,20 +178,20 @@ export const EditTransferSchema = z.object({
   ),
 });
 export type EditTransferRequest = z.infer<typeof EditTransferSchema>;
-export const EditTransferFLSchema = z.object({
-  from: z.string(),
-  to: z.string(),
-  remark: z.string(),
-  transferLines: z.array(
-    z.object({
-      itemCode: z.string(),
-      description: z.string(),
-      quantity: z.number(),
-      uomCode: z.string(),
-    })
-  ),
-});
-export type EditTransferFLRequest = z.infer<typeof EditTransferFLSchema>;
+// export const EditTransferFLSchema = z.object({
+//   from: z.string(),
+//   to: z.string(),
+//   remark: z.string(),
+//   transferLines: z.array(
+//     z.object({
+//       itemCode: z.string(),
+//       description: z.string(),
+//       quantity: z.number(),
+//       uomCode: z.string(),
+//     })
+//   ),
+// });
+// export type EditTransferFLRequest = z.infer<typeof EditTransferFLSchema>;
 
 export const EditWasteSchema = z.object({
   remark: z.string(),

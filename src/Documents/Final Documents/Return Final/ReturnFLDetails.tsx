@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getReturnFLDetails, postReturnFL } from "@/api/client";
 import DataRenderer from "@/components/DataRenderer";
+import POLayout from "@/components/Printlayout/POLayout";
+import Print from "@/components/Printlayout/Print";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/ui/Loader";
@@ -78,18 +80,25 @@ const ReturnFLDetails = () => {
       <Loader enable={isClosing} />
       <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
         <DataRenderer isLoading={isFetching} isError={isError}>
-          <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
-            <Link
-              to={"/rootumex/documents/final-docs/return-final"}
-              className="size-10 border flex items-center   cursor-pointer border-Secondary-500 rounded-CS p-2">
-              <FontAwesomeIcon
-                className="size-6 text-Primary-500"
-                icon={faChevronLeft}
-              />
-            </Link>
-            <span className="text-2xl leading-CS  font-bold  text-RT-Black">
-              {returnDetailsFL?.code}
-            </span>
+          <div className="px-6 py-4 flex justify-between  h-[4.5rem] border-b border-Primary-15">
+            <div className="flex gap-x-6 items-center">
+              <Link
+                to={"/rootumex/documents/final-docs/return-final"}
+                className="size-10 border flex items-center   cursor-pointer border-Secondary-500 rounded-CS p-2">
+                <FontAwesomeIcon
+                  className="size-6 text-Primary-500"
+                  icon={faChevronLeft}
+                />
+              </Link>
+              <span className="text-2xl leading-CS  font-bold  text-RT-Black">
+                {returnDetailsFL?.code}
+              </span>
+            </div>
+              <Print btnText={"return"}>
+                {returnDetailsFL && (
+                  <POLayout data={returnDetailsFL} type="ReturnFL" />
+                )}
+              </Print>
           </div>
           <div className="flex-1 w-full overflow-scroll p-4 flex flex-col gap-y-10 ">
             <div className="space-y-4 min-w-[80rem]">

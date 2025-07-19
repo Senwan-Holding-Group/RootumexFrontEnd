@@ -121,7 +121,7 @@ const ZoneDetails = () => {
                           key={`${uniqueId}_item_${itemIndex}`}
                           className="  border-b-2  border-Secondary-500">
                           <div className="space-y-4 h-[4.75rem] px-2 py-2  text-base font-medium leading-CS text-RT-Black">
-                            <h1>{item.item_name}</h1>
+                            <h1>{item.item_code +"-"+ item.item_name }</h1>
                             <div className="flex gap-x-14    text-Gray-500">
                               <div className="flex">
                                 <span>Qty:&nbsp;</span>

@@ -1,88 +1,63 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getTransferDetailsFL, postTransferFL } from "@/api/client";
+import {
+  getTransferDetailsFLQueryOptions,
+  useCloseTransferFL,
+} from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
+import Print from "@/components/Printlayout/Print";
+import TransferLayout from "@/components/Printlayout/TransferLayout";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/ui/Loader";
 import { useStateContext } from "@/context/useStateContext";
 import {
   faChevronLeft,
-  faSquareCheck,
   faSquareExclamation,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Link, useParams } from "react-router-dom";
 
 const WhsTransferFLDetails = () => {
   const { id } = useParams();
   const { setError, setDialogOpen, setDialogConfig } = useStateContext();
-  const queryClient = useQueryClient();
 
   const {
     data: transferDetailsFL,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["transferDetailsFL", id],
-    queryFn: () => getTransferDetailsFL(`/transfer_handheld/${id}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(getTransferDetailsFLQueryOptions(setError, "WHS", id));
 
-  const { mutate: closeTransferFL, isPending: isClosing } = useMutation({
-    mutationFn: () => postTransferFL(`/transfer_handheld/close/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transferDetailsFL"] });
-      setDialogConfig({
-        title: "Transfer Closed successfully!",
-        description: "Your transfer is successfully closed ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      setDialogConfig({
-        title: "Transfer not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: closeTransferFL, isPending: isClosing } = useCloseTransferFL(
+    "WHS",
+    id
+  );
 
   return (
     <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
       <Loader enable={isClosing} />
       <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
         <DataRenderer isLoading={isFetching} isError={isError}>
-          <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
-            <Link
-              to={"/rootumex/documents/final-docs/Wh-transfer-FL"}
-              className="size-10 border flex items-center   cursor-pointer border-Secondary-500 rounded-CS p-2">
-              <FontAwesomeIcon
-                className="size-6 text-Primary-500"
-                icon={faChevronLeft}
-              />
-            </Link>
-            <span className="text-2xl leading-CS  font-bold  text-RT-Black">
-              {transferDetailsFL?.transferNumber}
-            </span>
+          <div className="px-6 py-4 flex justify-between  h-[4.5rem] border-b border-Primary-15">
+            <div className="flex gap-x-6 items-center">
+              {" "}
+              <Link
+                to={"/rootumex/documents/final-docs/Wh-transfer-FL"}
+                className="size-10 border flex items-center   cursor-pointer border-Secondary-500 rounded-CS p-2">
+                <FontAwesomeIcon
+                  className="size-6 text-Primary-500"
+                  icon={faChevronLeft}
+                />
+              </Link>
+              <span className="text-2xl leading-CS  font-bold  text-RT-Black">
+                {transferDetailsFL?.transferNumber}
+              </span>
+            </div>
+            <Print btnText={"Transfer"}>
+              {transferDetailsFL && (
+                <TransferLayout data={transferDetailsFL} type="WHSFL" />
+              )}
+            </Print>
           </div>
           <div className="flex-1 w-full overflow-scroll p-4 flex flex-col gap-y-10 ">
             <div className="space-y-4 min-w-[80rem]">

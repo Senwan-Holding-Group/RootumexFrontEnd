@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  getTransferDetails,
-  postCancelTransfer,
-  putTransfer,
-} from "@/api/client";
+  getTransferDetailsQueryOptions,
+  useCancelTransfer,
+  useUpdateTransfer,
+} from "@/api/query";
 import { Calendar } from "@/components/calendar";
 import DataRenderer from "@/components/DataRenderer";
 import ItemSelect from "@/components/ItemsSelect";
+import Print from "@/components/Printlayout/Print";
+import TransferLayout from "@/components/Printlayout/TransferLayout";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -38,13 +39,12 @@ import {
   faCalendarCirclePlus,
   faChevronLeft,
   faSpinner,
-  faSquareCheck,
   faSquareExclamation,
   faTrashCan,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -54,7 +54,6 @@ const WhTransferDetails = () => {
   const { id } = useParams();
   const { setError, setDialogConfig, setDialogOpen } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
-  const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<Docline[]>([]);
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditTransferRequest>({
@@ -71,12 +70,7 @@ const WhTransferDetails = () => {
     data: transferDetails,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["WhtransferDetails", id],
-    queryFn: () => getTransferDetails(`/transfer/${id}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(getTransferDetailsQueryOptions(setError, "WHS", id));
   const updateLineQuantity = (line: number, newQuantity: string) => {
     const quantity = parseFloat(newQuantity);
     if (isNaN(quantity)) return;
@@ -112,79 +106,11 @@ const WhTransferDetails = () => {
     }
   }, [form, transferDetails]);
 
-  const { mutate: editTransfer, isPending } = useMutation({
-    mutationFn: (data: EditTransferRequest) =>
-      putTransfer(`/transfer/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["WhtransferDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Transfer updated successfully!",
-        description: "Your transfer is successfully updated ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Transfer not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
-  const { mutate: cancelTransfer, isPending: isClosing } = useMutation({
-    mutationFn: () => postCancelTransfer(`/transfer/cancel/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["WhtransferDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Transfer canceled successfully!",
-        description: "Your transfer is successfully canceled ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Transfer not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: editTransfer, isPending } = useUpdateTransfer("WHS", id);
+  const { mutate: cancelTransfer, isPending: isClosing } = useCancelTransfer(
+    "WHS",
+    id
+  );
   const onSubmit = async (values: EditTransferRequest) => {
     const newValues = {
       ...values,
@@ -206,18 +132,26 @@ const WhTransferDetails = () => {
         <Loader enable={isPending} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
           <DataRenderer isLoading={isFetching} isError={isError}>
-            <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
-              <Link
-                to={"/rootumex/documents/requests/Wh-transfer"}
-                className="size-10 border flex items-center   cursor-pointer border-Secondary-500 rounded-CS p-2">
-                <FontAwesomeIcon
-                  className="size-6 text-Primary-500"
-                  icon={faChevronLeft}
-                />
-              </Link>
-              <span className="text-2xl leading-CS  font-bold  text-RT-Black">
-                {transferDetails?.transferNumber}
-              </span>
+            <div className="px-6 py-4 flex justify-between  h-[4.5rem] border-b border-Primary-15">
+              <div className="flex gap-x-6 items-center">
+                {" "}
+                <Link
+                  to={"/rootumex/documents/requests/Wh-transfer"}
+                  className="size-10 border flex items-center   cursor-pointer border-Secondary-500 rounded-CS p-2">
+                  <FontAwesomeIcon
+                    className="size-6 text-Primary-500"
+                    icon={faChevronLeft}
+                  />
+                </Link>
+                <span className="text-2xl leading-CS  font-bold  text-RT-Black">
+                  {transferDetails?.transferNumber}
+                </span>
+              </div>
+              <Print btnText={"Transfer"}>
+                {transferDetails && (
+                  <TransferLayout data={transferDetails} type="WHS" />
+                )}
+              </Print>
             </div>
             <div className="flex-1 w-full overflow-scroll p-4 flex flex-col gap-y-10 ">
               <div className="space-y-4 min-w-[80rem]">
@@ -353,38 +287,7 @@ const WhTransferDetails = () => {
                         {transferDetails?.from}
                       </span>
                     </div>
-                    {/* <FormField
-                      control={form.control}
-                      name="from"
-                      render={({ field }) => (
-                        <FormItem className="space-y-1">
-                          <FormLabel className="text-Gray-500   ml-2 font-bold text-sm leading-CS h-[1.1875rem]">
-                            From
-                          </FormLabel>
-                          <FormControl>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              disabled={isPending || !isEdit}>
-                              <SelectTrigger className=" border w-full h-10  inline-flex p-2 disabled:opacity-100 border-Secondary-500 font-medium text-base leading-CS ">
-                                <SelectValue placeholder="Select" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {dependencies?.warehouses?.map((whs) => (
-                                  <SelectItem
-                                    key={whs.warehouseCode}
-                                    value={whs.warehouseCode}>
-                                    {whs.warehouseName +
-                                      "-" +
-                                      whs.warehouseCode}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    /> */}
+         
                     <FormField
                       control={form.control}
                       name="to"

@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  getWasteDetails,
-  postCancelWaste,
-  postCloseWaste,
-  putWaste,
-} from "@/api/client";
+  getWasteDetailsQueryOptions,
+  useCancelWaste,
+  useCloseWaste,
+  useUpdateWaste,
+} from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,13 +22,12 @@ import { Waste } from "@/lib/types";
 import {
   faChevronLeft,
   faSpinner,
-  faSquareCheck,
   faSquareExclamation,
   faTrashCan,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {  useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -38,9 +36,7 @@ import { Link, useParams } from "react-router-dom";
 const WasteDetails = () => {
   const { id } = useParams();
   const { setError, setDialogConfig, setDialogOpen } = useStateContext();
-  const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<Waste["waste_lines"][0][]>([]);
-
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditWasteRequest>({
     resolver: zodResolver(EditWasteSchema),
@@ -53,12 +49,7 @@ const WasteDetails = () => {
     data: wasteDetails,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["wasteDetails", id],
-    queryFn: () => getWasteDetails(`/waste/${id}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(getWasteDetailsQueryOptions(setError, id));
 
   useEffect(() => {
     if (wasteDetails) {
@@ -84,112 +75,9 @@ const WasteDetails = () => {
       })
     );
   };
-  const { mutate: editWaste, isPending } = useMutation({
-    mutationFn: (data: EditWasteRequest) => putWaste(`/waste/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["wasteDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Waste updated successfully!",
-        description: "Your waste is successfully updated ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Waste not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
-  const { mutate: cancelWaste, isPending: isCancelling } = useMutation({
-    mutationFn: () => postCancelWaste(`/waste/cancel/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["wasteDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Waste canceled successfully!",
-        description: "Your waste is successfully canceled ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Waste not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
-  const { mutate: closeWaste, isPending: isClosing } = useMutation({
-    mutationFn: () => postCloseWaste(`/waste/close/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["wasteDetails"] });
-      setDialogConfig({
-        title: "Waste Closed successfully!",
-        description: "Your Waste is successfully closed ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      setDialogConfig({
-        title: "Waste not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: editWaste, isPending } = useUpdateWaste(id);
+  const { mutate: cancelWaste, isPending: isCancelling } = useCancelWaste(id);
+  const { mutate: closeWaste, isPending: isClosing } = useCloseWaste(id);
   const onSubmit = async (values: EditWasteRequest) => {
     const newValues = {
       remark: values.remark,
@@ -206,7 +94,7 @@ const WasteDetails = () => {
   return (
     <Form {...form}>
       <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
-        <Loader enable={isPending} />
+        <Loader enable={isPending || isCancelling || isClosing} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
           <DataRenderer isLoading={isFetching} isError={isError}>
             <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
@@ -425,7 +313,7 @@ const WasteDetails = () => {
                         Created at:
                       </Label>
                       <span className="text-RT-Black font-bold text-base leading-CS">
-                       {wasteDetails?.create_at &&
+                        {wasteDetails?.create_at &&
                           format(new Date(wasteDetails.create_at), "PP")}
                       </span>
                     </div>
@@ -491,8 +379,8 @@ const WasteDetails = () => {
                       confirmText: "Close Waste",
                     });
                   }}
-                  className=" bg-transparent w-[10rem] rounded-2xl text-Primary-500  border border-Secondary-500 font-bold ">
-                  Close Transfer
+                  className=" w-[10rem] rounded-2xl  font-bold ">
+                  Close Waste
                 </Button>
                 <Button
                   disabled={isFetching}
@@ -503,7 +391,7 @@ const WasteDetails = () => {
                       setisEdit(true);
                     }
                   }}
-                  className="  rounded-2xl w-[10rem]">
+                  className="  bg-transparent w-[10rem] rounded-2xl text-Primary-500  border border-Secondary-500 font-bold">
                   Edit
                 </Button>
               </>

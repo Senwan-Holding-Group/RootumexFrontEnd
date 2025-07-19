@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Search from "@/components/Search";
 import { useStateContext } from "@/context/useStateContext";
-import {  returnRequestMenu } from "@/lib/constants";
+import { returnRequestMenu } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import CreateReturn from "./CreateReturn";
-import { getReturnRequest } from "@/api/client";
 import StatusBadge from "@/components/StatusBadge";
 import { numberWithCommas } from "@/lib/utils";
 import { format } from "date-fns";
 import { useTableState } from "@/lib/hooks/useTableState";
 import DataTable from "@/components/DataTable";
 import { Return } from "@/lib/types";
+import { getReturnQueryOptions } from "@/api/query";
 const columns = [
   { header: "Code", accessor: "code", isFirstColumn: true },
   {
@@ -54,21 +54,9 @@ const ReturnTable = () => {
     data: returnList,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["returnList", search.searchValue, currentPage],
-    queryFn: () => {
-      const searchParam = search.searchValue
-        ? `${search.searchKey}=${search.searchValue}&`
-        : "";
-      return getReturnRequest(
-        `/return_request?${searchParam}&limit=15&page=${currentPage}`,
-        setError,
-        setTotalPage
-      );
-    },
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(
+    getReturnQueryOptions(search, currentPage, setTotalPage, setError)
+  );
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
       <div className="flex w-full   flex-col sm:flex-row justify-between gap-2 ">

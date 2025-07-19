@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getPurchaseOrder } from "@/api/client";
 import Search from "@/components/Search";
 import StatusBadge from "@/components/StatusBadge";
 import { useStateContext } from "@/context/useStateContext";
@@ -12,6 +11,7 @@ import { format } from "date-fns";
 import { useTableState } from "@/lib/hooks/useTableState";
 import DataTable from "@/components/DataTable";
 import { PO } from "@/lib/types";
+import { getPOQueryOptions } from "@/api/query";
 const columns = [
   { header: "Code", accessor: "code", isFirstColumn: true },
   {
@@ -55,21 +55,7 @@ const PurchaseTable = () => {
     data: poList,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["poList", search.searchValue, currentPage],
-    queryFn: () => {
-      const searchParam = search.searchValue
-        ? `${search.searchKey}=${search.searchValue}&`
-        : "";
-      return getPurchaseOrder(
-        `/purchase_order?${searchParam}limit=15&page=${currentPage}`,
-        setError,
-        setTotalPage
-      );
-    },
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(getPOQueryOptions(search, currentPage, setTotalPage, setError));
 
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">

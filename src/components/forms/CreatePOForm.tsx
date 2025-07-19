@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "../ui/button";
 import { DialogClose } from "../ui/dialog";
@@ -22,16 +21,12 @@ import {
 import {
   faCalendarCirclePlus,
   faSpinner,
-  faSquareCheck,
-  faSquareExclamation,
   faTrashCan,
 } from "@fortawesome/pro-regular-svg-icons";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CreatePORequest, CreatePOSchema } from "@/lib/formsValidation";
-import { postPO } from "@/api/client";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { format } from "date-fns";
 import { calculateLineTotal, cn, numberWithCommas } from "@/lib/utils";
@@ -40,15 +35,11 @@ import { Dependencies, Docline } from "@/lib/types";
 import { Calendar } from "../calendar";
 import { Label } from "../ui/label";
 import ItemSelect from "../ItemsSelect";
-import { useStateContext } from "@/context/useStateContext";
+import { useCreatePO } from "@/api/query";
 
 const CreatePOForm = () => {
-  const queryClient = useQueryClient();
-  const {  setDialogOpen, setDialogConfig } =
-    useStateContext();
   const dependencies = useOutletContext<Dependencies>();
   const [docLine, setdocLine] = useState<Docline[]>([]);
-
   const form = useForm<CreatePORequest>({
     resolver: zodResolver(CreatePOSchema),
     defaultValues: {
@@ -63,43 +54,7 @@ const CreatePOForm = () => {
       poLines: [],
     },
   });
-  const { mutate: createPO, isPending } = useMutation({
-    mutationFn: (data: CreatePORequest) => postPO("/purchase_order", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["poList"] });
-      form.reset();
-      setdocLine([]);
-      setDialogConfig({
-        title: "PO created successfully!",
-        description: "Your purchase order is successfully created ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "PO not created",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: createPO, isPending } = useCreatePO(form, setdocLine);
   const calculateDocumentTotal = useCallback(() => {
     return docLine?.reduce((sum, line) => sum + (line.total_price || 0), 0);
   }, [docLine]);
@@ -349,12 +304,23 @@ const CreatePOForm = () => {
                       <FormMessage />
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        disabled={isPending}
-                        placeholder="Project name"
-                        {...field}
-                        className="border w-full inline-flex disabled:bg-Gray-50 disabled:text-Gray-300 border-Secondary-500 font-medium text-base leading-CS"
-                      />
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isPending}>
+                        <SelectTrigger className=" border w-full h-10  inline-flex p-2 disabled:bg-Gray-50 disabled:text-Gray-300 border-Secondary-500 font-medium text-base leading-CS ">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dependencies?.sites?.map((whs) => (
+                            <SelectItem
+                              key={whs.warehouseCode}
+                              value={whs.warehouseCode}>
+                              {whs.warehouseName + "-" + whs.warehouseCode}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                   </FormItem>
                 )}
@@ -469,7 +435,6 @@ const CreatePOForm = () => {
             Confirm
           </Button>
         </div>
-      
       </form>
     </Form>
   );

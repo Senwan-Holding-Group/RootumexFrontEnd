@@ -2,7 +2,6 @@
 import Search from "@/components/Search";
 import { siteTransferRequestMenu } from "@/lib/constants";
 import CreateTransfer from "../Warehouse Transfer/CreateTransfer";
-import { getTransfer } from "@/api/client";
 import { useNavigate } from "react-router-dom";
 import { useStateContext } from "@/context/useStateContext";
 import StatusBadge from "@/components/StatusBadge";
@@ -11,6 +10,7 @@ import { format } from "date-fns";
 import { useTableState } from "@/lib/hooks/useTableState";
 import DataTable from "@/components/DataTable";
 import { WhsTransfer } from "@/lib/types";
+import { getTransferQueryOptions } from "@/api/query";
 const columns = [
   { header: "Code", accessor: "transferNumber", isFirstColumn: true },
   {
@@ -52,21 +52,9 @@ const SiteTransferTable = () => {
     data: siteTransferList,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["siteTransferList", search.searchValue, currentPage],
-    queryFn: () => {
-      const searchParam = search.searchValue
-        ? `${search.searchKey}=${search.searchValue}&`
-        : "";
-      return getTransfer(
-        `/site_transfer_request?${searchParam}limit=15&page=${currentPage}`,
-        setError,
-        setTotalPage
-      );
-    },
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(
+    getTransferQueryOptions(search, currentPage, setTotalPage, setError, "SITE")
+  );
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
       <div className="flex w-full   flex-col sm:flex-row justify-between gap-2 ">

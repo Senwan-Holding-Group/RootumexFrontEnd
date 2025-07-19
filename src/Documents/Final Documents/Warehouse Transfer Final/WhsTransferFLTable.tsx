@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getTransferFL } from "@/api/client";
+import { getTransferFLQueryOptions } from "@/api/query";
 import DataTable from "@/components/DataTable";
 import Search from "@/components/Search";
 import StatusBadge from "@/components/StatusBadge";
@@ -15,22 +14,22 @@ const columns = [
   {
     header: "Status",
     accessor: "status",
-    render: (item: any) => <StatusBadge status={item.status} />,
+    render: (item: WhsTransfer) => <StatusBadge status={item.status} />,
   },
   {
     header: "From/To",
     accessor: "from",
-    render: (item: any) => `${item.from}/${item.to}`,
+    render: (item: WhsTransfer) => `${item.from}/${item.to}`,
   },
   {
     header: "Document date",
     accessor: "docDate",
-    render: (item: any) => format(item.docDate, "yyyy-MM-dd"),
+    render: (item: WhsTransfer) => format(item.docDate, "yyyy-MM-dd"),
   },
   {
     header: "Delivery date",
     accessor: "docDueDate",
-    render: (item: any) => format(item.docDueDate, "yyyy-MM-dd"),
+    render: (item: WhsTransfer) => format(item.docDueDate, "yyyy-MM-dd"),
     isLastColumn: true,
   },
 ];
@@ -51,21 +50,15 @@ const WhsTransferFLTable = () => {
     data: transferListFL,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["transferListFL", search.searchValue, currentPage],
-    queryFn: () => {
-      const searchParam = search.searchValue
-        ? `${search.searchKey}=${search.searchValue}&`
-        : "";
-      return getTransferFL(
-        `/transfer_handheld?${searchParam}limit=15&page=${currentPage}`,
-        setError,
-        setTotalPage
-      );
-    },
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(
+    getTransferFLQueryOptions(
+      search,
+      currentPage,
+      setTotalPage,
+      setError,
+      "WHS"
+    )
+  );
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
       <div className="flex w-full   flex-col sm:flex-row justify-between gap-2 ">

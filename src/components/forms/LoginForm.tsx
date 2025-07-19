@@ -66,6 +66,7 @@ const LoginForm = () => {
                     </FormLabel>
                     <FormControl>
                       <Input
+                        autoComplete="username"
                         placeholder="Write your Username"
                         className="h-10  w-[22rem] border border-Secondary-500 p-2 rounded-2xl"
                         {...field}
@@ -86,6 +87,7 @@ const LoginForm = () => {
                     <FormControl>
                       <div className="flex relative ">
                         <Input
+                          autoComplete="current-password"
                           type={showPassword ? "text" : "password"}
                           placeholder="Write your Password"
                           className="h-10 mb-6 w-[22rem] border  border-Secondary-500 p-2 rounded-2xl"

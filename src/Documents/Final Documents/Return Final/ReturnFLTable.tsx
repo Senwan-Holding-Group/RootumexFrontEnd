@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getReturnFL } from "@/api/client";
 import DataTable from "@/components/DataTable";
 import Search from "@/components/Search";
@@ -16,23 +15,23 @@ import { useNavigate } from "react-router-dom";
     {
       header: "Status",
       accessor: "status",
-      render: (item: any) => <StatusBadge status={item.status} />,
+      render: (item: Return) => <StatusBadge status={item.status} />,
     },
     { header: "Vendor", accessor: "vendorName" },
     {
       header: "Document date",
       accessor: "docDate",
-      render: (item: any) => format(item.docDate, "yyyy-MM-dd"),
+      render: (item: Return) => format(item.docDate, "yyyy-MM-dd"),
     },
     {
       header: "Delivery date",
       accessor: "docDueDate",
-      render: (item: any) => format(item.docDueDate, "yyyy-MM-dd"),
+      render: (item: Return) => format(item.docDueDate, "yyyy-MM-dd"),
     },
     {
       header: "Total amount",
       accessor: "total",
-      render: (item: any) => numberWithCommas(item.total),
+      render: (item: Return) => numberWithCommas(item.total),
       isLastColumn: true,
     },
   ];

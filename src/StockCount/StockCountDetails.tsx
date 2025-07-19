@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  getStockCountDetails,
-  postCancelStockCount,
-  postCloseStockCount,
-  putStockCount,
-} from "@/api/client";
+  getStockCountDetailsQueryOptions,
+  useCancelStockCount,
+  useCloseStockCount,
+  useUpdateStockCount,
+} from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,12 +25,11 @@ import { StockCount } from "@/lib/types";
 import {
   faChevronLeft,
   faSpinner,
-  faSquareCheck,
   faSquareExclamation,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {  useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -40,9 +38,7 @@ import { Link, useParams } from "react-router-dom";
 const StockCountDetails = () => {
   const { id } = useParams();
   const { setError, setDialogConfig, setDialogOpen } = useStateContext();
-  const queryClient = useQueryClient();
   const [docLine, setdocLine] = useState<StockCount["lines"][0][]>([]);
-
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditStockCountRequest>({
     resolver: zodResolver(EditStockCountSchema),
@@ -55,12 +51,7 @@ const StockCountDetails = () => {
     data: stockCountDetails,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["stockCountDetails", id],
-    queryFn: () => getStockCountDetails(`/inventory_count/${id}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(getStockCountDetailsQueryOptions(setError, id));
 
   useEffect(() => {
     if (stockCountDetails) {
@@ -104,113 +95,11 @@ const StockCountDetails = () => {
       return <span className="text-Error-600">{Math.abs(diff)} (Short)</span>;
     }
   };
-  const { mutate: editStockCount, isPending } = useMutation({
-    mutationFn: (data: EditStockCountRequest) =>
-      putStockCount(`/inventory_count/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["stockCountDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Stock count updated successfully!",
-        description: "Your stock count is successfully updated ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Stock count not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
-  const { mutate: closeStocKCount, isPending: isClosing } = useMutation({
-    mutationFn: () => postCloseStockCount(`/inventory_count/close/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["stockCountDetails"] });
-      setDialogConfig({
-        title: "Stock count Closed successfully!",
-        description: "Your Stock count is successfully closed ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      setDialogConfig({
-        title: "Stock count not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
-  const { mutate: cancelStockCount, isPending: isCancelling } = useMutation({
-    mutationFn: () => postCancelStockCount(`/inventory_count/cancel/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["wasteDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Stock count canceled successfully!",
-        description: "Your Stock count is successfully canceled ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Stock count not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: editStockCount, isPending } = useUpdateStockCount(id);
+  const { mutate: closeStocKCount, isPending: isClosing } =
+    useCloseStockCount(id);
+  const { mutate: cancelStockCount, isPending: isCancelling } =
+    useCancelStockCount(id);
   const onSubmit = async (values: EditStockCountRequest) => {
     const newValues = {
       remark: values.remark,
@@ -221,7 +110,7 @@ const StockCountDetails = () => {
   return (
     <Form {...form}>
       <div className=" h-[calc(100dvh-6.875rem)] overflow-auto  ">
-        <Loader enable={isPending} />
+        <Loader enable={isPending || isCancelling || isClosing} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
           <DataRenderer isLoading={isFetching} isError={isError}>
             <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">

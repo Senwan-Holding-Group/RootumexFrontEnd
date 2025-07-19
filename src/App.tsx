@@ -8,14 +8,17 @@ import ConfirmationDialog from "./components/ConfirmationDialog";
 const App = () => {
   const { token } = useAuth();
   const { setError, dialogOpen, dialogConfig, setDialogOpen } =
-    useStateContext();  
+    useStateContext();
   const { data: dependencies } = useQuery({
     queryKey: ["dependencies"],
     queryFn: () => getDependencies(`/dependency`, setError),
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    retry: (failureCount) => {
+      return failureCount < 10;
+    },
+    retryDelay: 1000,
     enabled: !!token,
-    staleTime: 300000,
   });
   return (
     <div className="font-Nunito bg-Secondary-50 h-dvh w-screen space-y-2">

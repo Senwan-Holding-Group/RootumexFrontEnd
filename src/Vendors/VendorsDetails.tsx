@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getVendorDetails, putVendor } from "@/api/client";
+import { getVendorDetailsQueryOptions, useUpdateVendor } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,12 +23,11 @@ import { EditVendorRequest, EditVendorSchema } from "@/lib/formsValidation";
 import {
   faChevronLeft,
   faSpinner,
-  faSquareCheck,
   faSquareExclamation,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {  useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
@@ -37,7 +35,6 @@ import { Link, useParams } from "react-router-dom";
 const VendorsDetails = () => {
   const { id } = useParams();
   const { setError, setDialogConfig, setDialogOpen } = useStateContext();
-  const queryClient = useQueryClient();
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditVendorRequest>({
     resolver: zodResolver(EditVendorSchema),
@@ -54,12 +51,7 @@ const VendorsDetails = () => {
     data: vendorDetails,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["vendorDetails", id],
-    queryFn: () => getVendorDetails(`/vendor?vendorCode=${id}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+  } = useQuery(getVendorDetailsQueryOptions(setError,id));
 
   useEffect(() => {
     if (vendorDetails) {
@@ -74,42 +66,7 @@ const VendorsDetails = () => {
     }
   }, [form, vendorDetails]);
 
-  const { mutate: editVendor, isPending } = useMutation({
-    mutationFn: (data: EditVendorRequest) => putVendor(`/vendor/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendorDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Vendor details updated successfully!",
-        description: "Your vendor details are successfully updated ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Vendor  not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: editVendor, isPending } = useUpdateVendor(id)
   const onSubmit = async (values: EditVendorRequest) => {
     editVendor(values);
   };

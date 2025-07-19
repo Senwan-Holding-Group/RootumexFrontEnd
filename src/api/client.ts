@@ -9,12 +9,10 @@ import {
   CreateStockCount,
   CreateTransferRequest,
   CreateVendorRequest,
-  EditGRPORequest,
   EditItemRequest,
   EditPORequest,
   EditReturnRequest,
   EditStockCountRequest,
-  EditTransferFLRequest,
   EditTransferRequest,
   EditVendorRequest,
   EditWasteRequest,
@@ -67,13 +65,12 @@ export const getDependencies = async (
     const res = await api.get(url);
     return res.data as Dependencies;
   } catch (error: any) {
-    console.log(error);
     if (error.message === "Network Error") {
       setError("Something went wrong check your connection");
     } else {
       setError(error.response.data.details);
     }
-    console.log(error);
+    throw error;
   }
 };
 //Item MasterData
@@ -95,7 +92,7 @@ export const getItemsMasterData = async (
     } else {
       setError(error.response.data.details);
     }
-    console.log(error);
+    throw error;
   }
 };
 export const getItemDetails = async (
@@ -243,15 +240,15 @@ export const getGRPODetails = async (
     console.log(error);
   }
 };
-export const putGRPO = async (url: string, data: EditGRPORequest) => {
-  try {
-    const res = await api.patch(url, data);
-    return res.data;
-  } catch (error: any) {
-    console.log(error);
-    throw error;
-  }
-};
+// export const putGRPO = async (url: string, data: EditGRPORequest) => {
+//   try {
+//     const res = await api.patch(url, data);
+//     return res.data;
+//   } catch (error: any) {
+//     console.log(error);
+//     throw error;
+//   }
+// };
 export const postGRPO = async (url: string) => {
   try {
     const res = await api.post(url);
@@ -363,15 +360,15 @@ export const getReturnFLDetails = async (
     console.log(error);
   }
 };
-export const putReturnFL = async (url: string, data: EditReturnRequest) => {
-  try {
-    const res = await api.patch(url, data);
-    return res.data;
-  } catch (error: any) {
-    console.log(error);
-    throw error;
-  }
-};
+// export const putReturnFL = async (url: string, data: EditReturnRequest) => {
+//   try {
+//     const res = await api.patch(url, data);
+//     return res.data;
+//   } catch (error: any) {
+//     console.log(error);
+//     throw error;
+//   }
+// };
 export const postReturnFL = async (url: string) => {
   try {
     const res = await api.post(url);
@@ -494,9 +491,7 @@ export const postTransfer = async (
     throw error;
   }
 };
-export const postCancelTransfer = async (
-  url: string
-) => {
+export const postCancelTransfer = async (url: string) => {
   try {
     const res = await api.post(url);
     return res.data;
@@ -509,7 +504,7 @@ export const putTransfer = async (url: string, data: EditTransferRequest) => {
   try {
     const res = await api.patch(url, data);
     return res.data;
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
     throw error;
   }
@@ -551,18 +546,18 @@ export const getTransferDetailsFL = async (
     console.log(error);
   }
 };
-export const putTransferFL = async (
-  url: string,
-  data: EditTransferFLRequest
-) => {
-  try {
-    const res = await api.patch(url, { ...data, docDueDate: "2025-1-1" });
-    return res.data;
-  } catch (error: any) {
-    console.log(error);
-    throw error;
-  }
-};
+// export const putTransferFL = async (
+//   url: string,
+//   data: EditTransferFLRequest
+// ) => {
+//   try {
+//     const res = await api.patch(url, { ...data, docDueDate: "2025-1-1" });
+//     return res.data;
+//   } catch (error: any) {
+//     console.log(error);
+//     throw error;
+//   }
+// };
 export const postTransferFL = async (url: string) => {
   try {
     const res = await api.post(url);
@@ -609,12 +604,9 @@ export const getVendorDetails = async (
     console.log(error);
   }
 };
-export const putVendor = async (
-  url: string,
-  data: EditVendorRequest
-) => {
+export const putVendor = async (url: string, data: EditVendorRequest) => {
   try {
-    const res = await api.patch(url,data);
+    const res = await api.patch(url, data);
     return res.data;
   } catch (error: any) {
     console.log(error);
@@ -622,7 +614,6 @@ export const putVendor = async (
   }
 };
 export const postVendor = async (url: string, data: CreateVendorRequest) => {
- 
   try {
     const res = await api.post(url, data);
     return res.data;
@@ -671,7 +662,6 @@ export const getStockCountDetails = async (
   }
 };
 export const postStockCount = async (url: string, data: CreateStockCount) => {
- 
   try {
     const res = await api.post(url, data);
     return res.data;
@@ -681,7 +671,6 @@ export const postStockCount = async (url: string, data: CreateStockCount) => {
   }
 };
 export const postCloseStockCount = async (url: string) => {
- 
   try {
     const res = await api.post(url);
     return res.data;
@@ -691,7 +680,6 @@ export const postCloseStockCount = async (url: string) => {
   }
 };
 export const postCancelStockCount = async (url: string) => {
- 
   try {
     const res = await api.post(url);
     return res.data;
@@ -700,7 +688,10 @@ export const postCancelStockCount = async (url: string) => {
     throw error;
   }
 };
-export const putStockCount = async (url: string, data: EditStockCountRequest) => {
+export const putStockCount = async (
+  url: string,
+  data: EditStockCountRequest
+) => {
   try {
     const res = await api.patch(url, data);
     return res.data;
@@ -712,7 +703,7 @@ export const putStockCount = async (url: string, data: EditStockCountRequest) =>
 //Zones
 export const getZoneDashboard = async (
   url: string,
-  setError: React.Dispatch<React.SetStateAction<string | undefined>>,
+  setError: React.Dispatch<React.SetStateAction<string | undefined>>
 ) => {
   try {
     const res = await api.get(url);
