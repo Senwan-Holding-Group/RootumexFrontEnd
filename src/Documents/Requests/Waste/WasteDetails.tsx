@@ -1,9 +1,5 @@
-import {
-  getWasteDetailsQueryOptions,
-  useCancelWaste,
-  useCloseWaste,
-  useUpdateWaste,
-} from "@/api/query";
+import { useCancelWaste, useCloseWaste, useUpdateWaste } from "@/api/mutations";
+import { getWasteDetailsQueryOptions } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +23,7 @@ import {
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {  useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -35,7 +31,7 @@ import { Link, useParams } from "react-router-dom";
 
 const WasteDetails = () => {
   const { id } = useParams();
-  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
+  const { setDialogConfig, setDialogOpen } = useStateContext();
   const [docLine, setdocLine] = useState<Waste["waste_lines"][0][]>([]);
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditWasteRequest>({
@@ -49,7 +45,8 @@ const WasteDetails = () => {
     data: wasteDetails,
     isFetching,
     isError,
-  } = useQuery(getWasteDetailsQueryOptions(setError, id));
+    error,
+  } = useQuery(getWasteDetailsQueryOptions(id));
 
   useEffect(() => {
     if (wasteDetails) {
@@ -96,7 +93,7 @@ const WasteDetails = () => {
       <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
         <Loader enable={isPending || isCancelling || isClosing} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-          <DataRenderer isLoading={isFetching} isError={isError}>
+          <DataRenderer isLoading={isFetching} isError={isError} error={error}>
             <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
               <Link
                 to={"/rootumex/documents/requests/waste"}

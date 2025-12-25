@@ -2,7 +2,6 @@ import { getTransferFLQueryOptions } from "@/api/query";
 import DataTable from "@/components/DataTable";
 import Search from "@/components/Search";
 import StatusBadge from "@/components/StatusBadge";
-import { useStateContext } from "@/context/useStateContext";
 import { whsTransferFinalMenu } from "@/lib/constants";
 import { useTableState } from "@/lib/hooks/useTableState";
 import { WhsTransfer } from "@/lib/types";
@@ -34,7 +33,6 @@ const columns = [
   },
 ];
 const WhsTransferFLTable = () => {
-  const { setError } = useStateContext();
   const navigate = useNavigate();
   const {
     currentPage,
@@ -50,14 +48,9 @@ const WhsTransferFLTable = () => {
     data: transferListFL,
     isFetching,
     isError,
+    error,
   } = useQuery(
-    getTransferFLQueryOptions(
-      search,
-      currentPage,
-      setTotalPage,
-      setError,
-      "WHS"
-    )
+    getTransferFLQueryOptions(search, currentPage, setTotalPage, "WHS")
   );
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
@@ -74,6 +67,7 @@ const WhsTransferFLTable = () => {
           data={transferListFL}
           isLoading={isFetching}
           isError={isError}
+          error={error}
           currentPage={currentPage}
           totalPages={totalPage}
           onPageChange={handlePageChange}

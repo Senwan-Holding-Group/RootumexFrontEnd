@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode } from "react";
-import DataRenderer from "@/components/DataRenderer";
+import DataRenderer, { ApiError } from "@/components/DataRenderer";
 import Pagination from "@/components/Pagination";
 
 type Column = {
@@ -15,6 +15,7 @@ type DataTableProps = {
   columns: Column[];
   data: any[] | undefined;
   isLoading: boolean;
+  error: ApiError | null;
   isError: boolean;
   currentPage: number;
   totalPages: number;
@@ -28,6 +29,7 @@ const DataTable = ({
   data,
   isLoading,
   isError,
+  error,
   currentPage,
   totalPages,
   onPageChange,
@@ -36,7 +38,7 @@ const DataTable = ({
 }: DataTableProps) => {
   return (
     <div className="border-2 h-full border-Primary-5 rounded-2xl block overflow-scroll">
-      <DataRenderer isLoading={isLoading} isError={isError}>
+      <DataRenderer isLoading={isLoading} isError={isError} error={error}>
         <table className="w-full caption-bottom">
           <thead className="sticky top-0 w-full bg-Primary-5">
             <tr className="text-nowrap font-semibold text-base/CS text-left text-Primary-400">

@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Search from "@/components/Search";
 import StatusBadge from "@/components/StatusBadge";
-import { useStateContext } from "@/context/useStateContext";
 import { stockMenu } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -16,12 +14,11 @@ const columns = [
   {
     header: "Status",
     accessor: "status",
-    render: (item: any) => <StatusBadge status={item.status} />,
+    render: (item: StockCount) => <StatusBadge status={item.status} />,
   },
   { header: "Document date", accessor: "doc_date", isLastColumn: true },
 ];
 const StockCountTable = () => {
-  const { setError } = useStateContext();
   const navigate = useNavigate();
 
   const {
@@ -38,8 +35,9 @@ const StockCountTable = () => {
     data: stockCountList,
     isFetching,
     isError,
+    error
   } = useQuery(
-    getStockCountQueryOptions(search, currentPage, setTotalPage, setError)
+    getStockCountQueryOptions(search, currentPage, setTotalPage)
   );
 
   return (
@@ -54,6 +52,7 @@ const StockCountTable = () => {
           data={stockCountList}
           isLoading={isFetching}
           isError={isError}
+          error={error}
           currentPage={currentPage}
           totalPages={totalPage}
           onPageChange={handlePageChange}

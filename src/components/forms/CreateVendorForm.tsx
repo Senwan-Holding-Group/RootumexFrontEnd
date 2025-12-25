@@ -1,7 +1,7 @@
 import { CreateVendorRequest, CreateVendorSchema } from "@/lib/formsValidation";
 import { faSpinner } from "@fortawesome/pro-regular-svg-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { useCreateVendor } from "@/api/query";
+import { useCreateVendor } from "@/api/mutations";
 
 const CreateVendorForm = () => {
   const form = useForm<CreateVendorRequest>({
@@ -36,7 +36,7 @@ const CreateVendorForm = () => {
     },
   });
   const { mutate: createVendor, isPending } = useCreateVendor(form);
-  const onSubmit = async (values: CreateVendorRequest) => {
+  const onSubmit: SubmitHandler<CreateVendorRequest> =  (values) => {
     createVendor(values);
   };
   return (

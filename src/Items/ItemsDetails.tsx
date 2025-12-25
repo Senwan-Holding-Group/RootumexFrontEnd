@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import api from "@/api";
-import { getItemDetails, putItem } from "@/api/client";
+import { useUpdateItem } from "@/api/mutations";
+import { getItemDetailsQueryOptions } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +29,6 @@ import {
   faChevronLeft,
   faPen,
   faSpinner,
-  faSquareCheck,
   faSquareExclamation,
   faXmark,
 } from "@fortawesome/pro-regular-svg-icons";
@@ -42,7 +41,7 @@ import { useForm } from "react-hook-form";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 const ItemsDetails = () => {
   const { id } = useParams();
-  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
+  const { setDialogConfig, setDialogOpen } = useStateContext();
   const queryClient = useQueryClient();
   const dependencies = useOutletContext<Dependencies>();
   const [isEdit, setisEdit] = useState(false);
@@ -64,12 +63,8 @@ const ItemsDetails = () => {
     data: itemDetails,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["itemDetails", { id }],
-    queryFn: () => getItemDetails(`/item/${id}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+    error,
+  } = useQuery(getItemDetailsQueryOptions(id));
   const form = useForm<EditItemRequest>({
     resolver: zodResolver(EditItemSchema),
     defaultValues: {
@@ -101,42 +96,7 @@ const ItemsDetails = () => {
       });
     }
   }, [form, itemDetails]);
-  const { mutate: editItem, isPending } = useMutation({
-    mutationFn: (data: EditItemRequest) => putItem(`/item/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["itemDetails"] });
-      form.reset();
-      setDialogConfig({
-        title: "Item updated successfully!",
-        description: "Your item is successfully updated ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Item not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: editItem, isPending } = useUpdateItem(id);
   const onSubmit = async (values: EditItemRequest) => {
     editItem(values);
   };
@@ -145,7 +105,7 @@ const ItemsDetails = () => {
       <div className=" h-[calc(100dvh-6.875rem)] overflow-auto  ">
         <Loader enable={isPending} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-          <DataRenderer isLoading={isFetching} isError={isError}>
+          <DataRenderer isLoading={isFetching} isError={isError} error={error}>
             <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
               <Link
                 to={"/rootumex/items"}
@@ -683,7 +643,7 @@ const ItemsDetails = () => {
                 Edit
               </Button>
             ) : (
-              <>
+              <div className="flex  gap-2">
                 <Button
                   type="button"
                   onClick={() => {
@@ -715,7 +675,7 @@ const ItemsDetails = () => {
                   )}
                   Save
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>

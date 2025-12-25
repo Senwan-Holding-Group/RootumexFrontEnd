@@ -2,7 +2,6 @@ import { getGRPOueryOptions } from "@/api/query";
 import DataTable from "@/components/DataTable";
 import Search from "@/components/Search";
 import StatusBadge from "@/components/StatusBadge";
-import { useStateContext } from "@/context/useStateContext";
 import { grpoMenu } from "@/lib/constants";
 import { useTableState } from "@/lib/hooks/useTableState";
 import { PO } from "@/lib/types";
@@ -26,7 +25,6 @@ const columns = [
   },
 ];
 const GRPOTable = () => {
-  const { setError } = useStateContext();
   const navigate = useNavigate();
 
   const {
@@ -43,7 +41,8 @@ const GRPOTable = () => {
     data: grpoList,
     isFetching,
     isError,
-  } = useQuery(getGRPOueryOptions(search, currentPage, setTotalPage, setError));
+    error
+  } = useQuery(getGRPOueryOptions(search, currentPage, setTotalPage));
 
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
@@ -56,6 +55,7 @@ const GRPOTable = () => {
           data={grpoList}
           isLoading={isFetching}
           isError={isError}
+          error={error}
           currentPage={currentPage}
           totalPages={totalPage}
           onPageChange={handlePageChange}

@@ -13,8 +13,8 @@ const Documents = () => {
   return (
     <div className="overflow-hidden w-full flex   flex-col gap-y-4 ">
       <div className="  flex flex-col gap-y-1 ">
-      <h1 className="ml-2 w-full  text-Gray-500 font-bold text-lg leading-CS ">
-      Documents
+        <h1 className="ml-2 w-full  text-Gray-500 font-bold text-lg leading-CS ">
+          Documents
         </h1>
         <div className="flex  leading-CS border-b  border-Primary-15 overflow-x-scroll overflow-y-hidden text-nowrap  h-[1.6875rem]">
           {taps.map((tap) => (

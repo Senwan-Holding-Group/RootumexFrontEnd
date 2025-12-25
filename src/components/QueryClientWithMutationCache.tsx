@@ -10,6 +10,7 @@ import {
   QueryClientProvider,
   QueryKey,
 } from "@tanstack/react-query";
+import { ApiError } from "./DataRenderer";
 declare module "@tanstack/react-query" {
   interface Register {
     mutationMeta: {
@@ -55,7 +56,7 @@ export const QueryClientWithMutationCache = ({
             const errorMessage =
               error.message === "Network Error"
                 ? "Network error. Please check your connection."
-                : (error as any).response?.data?.details || "An error occurred";
+                : (error as ApiError).response?.data?.details || "An error occurred";
             setDialogConfig({
               title: mutation.meta.titleOnError,
               description: errorMessage,

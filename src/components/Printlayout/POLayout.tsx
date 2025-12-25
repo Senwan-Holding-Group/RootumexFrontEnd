@@ -88,7 +88,7 @@ const POLayout = <T extends PO | Return>({ data, type }: props<T>) => {
 
           <div className="flex gap-2">
             <p className="w-[8rem]">NO of Items</p>
-            <span>: {data.poLines.length}</span>
+            <span>: {data?.poLines?.length}</span>
           </div>
           {type!="GRPO" && (
             <div className="flex gap-2">

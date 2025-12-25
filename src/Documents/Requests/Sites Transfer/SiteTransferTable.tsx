@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Search from "@/components/Search";
 import { siteTransferRequestMenu } from "@/lib/constants";
 import CreateTransfer from "../Warehouse Transfer/CreateTransfer";
 import { useNavigate } from "react-router-dom";
-import { useStateContext } from "@/context/useStateContext";
 import StatusBadge from "@/components/StatusBadge";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -16,27 +14,26 @@ const columns = [
   {
     header: "Status",
     accessor: "status",
-    render: (item: any) => <StatusBadge status={item.status} />,
+    render: (item: WhsTransfer) => <StatusBadge status={item.status} />,
   },
   {
     header: "From/To",
     accessor: "from",
-    render: (item: any) => `${item.from}/${item.to}`,
+    render: (item: WhsTransfer) => `${item.from}/${item.to}`,
   },
   {
     header: "Document date",
     accessor: "docDate",
-    render: (item: any) => format(item.docDate, "yyyy-MM-dd"),
+    render: (item: WhsTransfer) => format(item.docDate, "yyyy-MM-dd"),
   },
   {
     header: "Delivery date",
     accessor: "docDueDate",
-    render: (item: any) => format(item.docDueDate, "yyyy-MM-dd"),
+    render: (item: WhsTransfer) => format(item.docDueDate, "yyyy-MM-dd"),
     isLastColumn: true,
   },
 ];
 const SiteTransferTable = () => {
-  const { setError } = useStateContext();
   const navigate = useNavigate();
   const {
     currentPage,
@@ -52,8 +49,9 @@ const SiteTransferTable = () => {
     data: siteTransferList,
     isFetching,
     isError,
+    error,
   } = useQuery(
-    getTransferQueryOptions(search, currentPage, setTotalPage, setError, "SITE")
+    getTransferQueryOptions(search, currentPage, setTotalPage, "SITE")
   );
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
@@ -71,6 +69,7 @@ const SiteTransferTable = () => {
           data={siteTransferList}
           isLoading={isFetching}
           isError={isError}
+          error={error}
           currentPage={currentPage}
           totalPages={totalPage}
           onPageChange={handlePageChange}

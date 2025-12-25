@@ -1,4 +1,5 @@
-import { getVendorDetailsQueryOptions, useUpdateVendor } from "@/api/query";
+import { useUpdateVendor } from "@/api/mutations";
+import { getVendorDetailsQueryOptions } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,14 +28,14 @@ import {
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {  useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
 
 const VendorsDetails = () => {
   const { id } = useParams();
-  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
+  const { setDialogConfig, setDialogOpen } = useStateContext();
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditVendorRequest>({
     resolver: zodResolver(EditVendorSchema),
@@ -51,7 +52,8 @@ const VendorsDetails = () => {
     data: vendorDetails,
     isFetching,
     isError,
-  } = useQuery(getVendorDetailsQueryOptions(setError,id));
+    error,
+  } = useQuery(getVendorDetailsQueryOptions(id));
 
   useEffect(() => {
     if (vendorDetails) {
@@ -66,7 +68,7 @@ const VendorsDetails = () => {
     }
   }, [form, vendorDetails]);
 
-  const { mutate: editVendor, isPending } = useUpdateVendor(id)
+  const { mutate: editVendor, isPending } = useUpdateVendor(id);
   const onSubmit = async (values: EditVendorRequest) => {
     editVendor(values);
   };
@@ -75,7 +77,7 @@ const VendorsDetails = () => {
       <div className=" h-[calc(100dvh-6.875rem)] overflow-auto  ">
         <Loader enable={isPending} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-          <DataRenderer isLoading={isFetching} isError={isError}>
+          <DataRenderer isLoading={isFetching} isError={isError} error={error}>
             <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
               <Link
                 to={"/rootumex/vendors"}
@@ -242,9 +244,7 @@ const VendorsDetails = () => {
                                 <SelectItem key={"O"} value={"O"}>
                                   Active
                                 </SelectItem>
-                                <SelectItem
-                                  key={"D"}
-                                  value={"D"}>
+                                <SelectItem key={"D"} value={"D"}>
                                   InActive
                                 </SelectItem>
                               </SelectContent>
@@ -303,21 +303,20 @@ const VendorsDetails = () => {
           </DataRenderer>
           <div className="flex justify-end gap-x-4 px-6 py-4 border-t h-[4.5rem] border-Primary-15">
             {!isEdit ? (
-             
-                <Button
-                  disabled={isFetching}
-                  type="button"
-                  onClick={(e) => {
-                    if (!isEdit) {
-                      e.preventDefault();
-                      setisEdit(true);
-                    }
-                  }}
-                  className="  rounded-2xl w-[10rem]">
-                  Edit
-                </Button>
+              <Button
+                disabled={isFetching}
+                type="button"
+                onClick={(e) => {
+                  if (!isEdit) {
+                    e.preventDefault();
+                    setisEdit(true);
+                  }
+                }}
+                className="  rounded-2xl w-[10rem]">
+                Edit
+              </Button>
             ) : (
-              <>
+              <div className="flex gap-2">
                 <Button
                   type="button"
                   onClick={() => {
@@ -350,7 +349,7 @@ const VendorsDetails = () => {
                   )}
                   Save
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>

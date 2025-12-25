@@ -6,7 +6,6 @@ type StateProviderProps = {
   children: React.ReactNode;
 };
 const StateProvider = ({ children }: StateProviderProps) => {
-  const [error, setError] = useState<string | undefined>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({
     title: "",
@@ -22,8 +21,6 @@ const StateProvider = ({ children }: StateProviderProps) => {
   return (
     <StateContext.Provider
       value={{
-        error,
-        setError,
         dialogOpen,
         setDialogOpen,
         dialogConfig,

@@ -1,13 +1,16 @@
 import { useState } from "react";
 
-interface UseTableStateProps {
+type UseTableStateProps = {
   initialSearchKey: string;
-}
-
+};
+export type TSearch = {
+  searchKey: string;
+  searchValue: string;
+};
 export function useTableState({ initialSearchKey }: UseTableStateProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPage, setTotalPage] = useState<number>(0);
-  const [search, setSearch] = useState({
+  const [search, setSearch] = useState<TSearch>({
     searchKey: initialSearchKey,
     searchValue: "",
   });

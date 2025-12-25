@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Form,
   FormControl,
@@ -15,12 +13,7 @@ import { CreateItemRequest, CreateItemSchema } from "@/lib/formsValidation";
 import { DialogClose } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSpinner,
-  faSquareCheck,
-  faSquareExclamation,
-} from "@fortawesome/pro-regular-svg-icons";
-import { postItem } from "@/api/client";
+import { faSpinner } from "@fortawesome/pro-regular-svg-icons";
 import {
   Select,
   SelectContent,
@@ -31,11 +24,9 @@ import {
 import { Input } from "../ui/input";
 import { useOutletContext } from "react-router-dom";
 import { Dependencies } from "@/lib/types";
-import { useStateContext } from "@/context/useStateContext";
+import { useCreateItem } from "@/api/mutations";
 
 const CreateItemForm = () => {
-  const queryClient = useQueryClient();
-  const { setDialogOpen, setDialogConfig } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
 
   const form = useForm<CreateItemRequest>({
@@ -58,42 +49,7 @@ const CreateItemForm = () => {
       ],
     },
   });
-  const { mutate: createItem, isPending } = useMutation({
-    mutationFn: (data: CreateItemRequest) => postItem("/item", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["itemList"] });
-      form.reset();
-      setDialogConfig({
-        title: "Item created successfully!",
-        description: "Your item is successfully created ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      form.setError("root", { message: errorMessage });
-      setDialogConfig({
-        title: "Item not created",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
+  const { mutate: createItem, isPending } = useCreateItem(form);
   const onSubmit = async (values: CreateItemRequest) => {
     createItem(values);
   };

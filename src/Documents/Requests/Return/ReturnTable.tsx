@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Search from "@/components/Search";
-import { useStateContext } from "@/context/useStateContext";
 import { returnRequestMenu } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -17,28 +15,27 @@ const columns = [
   {
     header: "Status",
     accessor: "status",
-    render: (item: any) => <StatusBadge status={item.status} />,
+    render: (item: Return) => <StatusBadge status={item.status} />,
   },
   { header: "Vendor", accessor: "vendorName" },
   {
     header: "Document date",
     accessor: "docDate",
-    render: (item: any) => format(item.docDate, "yyyy-MM-dd"),
+    render: (item: Return) => format(item.docDate, "yyyy-MM-dd"),
   },
   {
     header: "Delivery date",
     accessor: "docDueDate",
-    render: (item: any) => format(item.docDueDate, "yyyy-MM-dd"),
+    render: (item: Return) => format(item.docDueDate, "yyyy-MM-dd"),
   },
   {
     header: "Total amount",
     accessor: "total",
-    render: (item: any) => numberWithCommas(item.total),
+    render: (item: Return) => numberWithCommas(item.total),
     isLastColumn: true,
   },
 ];
 const ReturnTable = () => {
-  const { setError } = useStateContext();
   const navigate = useNavigate();
   const {
     currentPage,
@@ -54,9 +51,8 @@ const ReturnTable = () => {
     data: returnList,
     isFetching,
     isError,
-  } = useQuery(
-    getReturnQueryOptions(search, currentPage, setTotalPage, setError)
-  );
+    error,
+  } = useQuery(getReturnQueryOptions(search, currentPage, setTotalPage));
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
       <div className="flex w-full   flex-col sm:flex-row justify-between gap-2 ">
@@ -73,6 +69,7 @@ const ReturnTable = () => {
           data={returnList}
           isLoading={isFetching}
           isError={isError}
+          error={error}
           currentPage={currentPage}
           totalPages={totalPage}
           onPageChange={handlePageChange}

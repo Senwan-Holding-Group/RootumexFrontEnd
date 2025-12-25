@@ -3,15 +3,16 @@ import Navbar from "./components/Navbar";
 import { useAuth } from "./api/Auth/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useStateContext } from "./context/useStateContext";
-import { getDependencies } from "./api/client";
+import { fetchById } from "./api/client";
 import ConfirmationDialog from "./components/ConfirmationDialog";
+import { Dependencies } from "./lib/types";
 const App = () => {
   const { token } = useAuth();
-  const { setError, dialogOpen, dialogConfig, setDialogOpen } =
-    useStateContext();
+  const { dialogOpen, dialogConfig, setDialogOpen } = useStateContext();
+
   const { data: dependencies } = useQuery({
     queryKey: ["dependencies"],
-    queryFn: () => getDependencies(`/dependency`, setError),
+    queryFn: () => fetchById<Dependencies>(`/dependency`),
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     retry: (failureCount) => {

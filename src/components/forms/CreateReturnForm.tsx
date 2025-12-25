@@ -40,7 +40,7 @@ import { Label } from "../ui/label";
 import ItemSelect from "../ItemsSelect";
 import { DialogClose } from "../ui/dialog";
 import { useAuth } from "@/api/Auth/useAuth";
-import { useCreateReturn } from "@/api/query";
+import { useCreateReturn } from "@/api/mutations";
 
 const CreateReturnForm = () => {
 
@@ -308,7 +308,7 @@ const CreateReturnForm = () => {
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
-                          {dependencies?.sites.map((whs) => (
+                          {dependencies?.sites?.map((whs) => (
                             <SelectItem
                               key={whs.warehouseCode}
                               value={whs.warehouseCode}>

@@ -35,7 +35,7 @@ import { Dependencies, Docline } from "@/lib/types";
 import { Calendar } from "../calendar";
 import { Label } from "../ui/label";
 import ItemSelect from "../ItemsSelect";
-import { useCreatePO } from "@/api/query";
+import { useCreatePO } from "@/api/mutations";
 
 const CreatePOForm = () => {
   const dependencies = useOutletContext<Dependencies>();

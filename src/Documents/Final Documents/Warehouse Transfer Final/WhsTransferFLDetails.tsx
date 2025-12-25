@@ -1,7 +1,5 @@
-import {
-  getTransferDetailsFLQueryOptions,
-  useCloseTransferFL,
-} from "@/api/query";
+import { useCloseTransferFL } from "@/api/mutations";
+import { getTransferDetailsFLQueryOptions } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import Print from "@/components/Printlayout/Print";
 import TransferLayout from "@/components/Printlayout/TransferLayout";
@@ -20,13 +18,14 @@ import { Link, useParams } from "react-router-dom";
 
 const WhsTransferFLDetails = () => {
   const { id } = useParams();
-  const { setError, setDialogOpen, setDialogConfig } = useStateContext();
+  const { setDialogOpen, setDialogConfig } = useStateContext();
 
   const {
     data: transferDetailsFL,
     isFetching,
     isError,
-  } = useQuery(getTransferDetailsFLQueryOptions(setError, "WHS", id));
+    error,
+  } = useQuery(getTransferDetailsFLQueryOptions("WHS", id));
 
   const { mutate: closeTransferFL, isPending: isClosing } = useCloseTransferFL(
     "WHS",
@@ -37,7 +36,7 @@ const WhsTransferFLDetails = () => {
     <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
       <Loader enable={isClosing} />
       <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-        <DataRenderer isLoading={isFetching} isError={isError}>
+        <DataRenderer isLoading={isFetching} isError={isError} error={error}>
           <div className="px-6 py-4 flex justify-between  h-[4.5rem] border-b border-Primary-15">
             <div className="flex gap-x-6 items-center">
               {" "}

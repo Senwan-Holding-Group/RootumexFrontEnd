@@ -1,8 +1,5 @@
-import {
-  getTransferDetailsQueryOptions,
-  useCancelTransfer,
-  useUpdateTransfer,
-} from "@/api/query";
+import { useCancelTransfer, useUpdateTransfer } from "@/api/mutations";
+import { getTransferDetailsQueryOptions } from "@/api/query";
 import { Calendar } from "@/components/calendar";
 import DataRenderer from "@/components/DataRenderer";
 import ItemSelect from "@/components/ItemsSelect";
@@ -52,7 +49,7 @@ import { Link, useOutletContext, useParams } from "react-router-dom";
 
 const WhTransferDetails = () => {
   const { id } = useParams();
-  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
+  const { setDialogConfig, setDialogOpen } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
   const [docLine, setdocLine] = useState<Docline[]>([]);
   const [isEdit, setisEdit] = useState(false);
@@ -70,7 +67,8 @@ const WhTransferDetails = () => {
     data: transferDetails,
     isFetching,
     isError,
-  } = useQuery(getTransferDetailsQueryOptions(setError, "WHS", id));
+    error,
+  } = useQuery(getTransferDetailsQueryOptions("WHS", id));
   const updateLineQuantity = (line: number, newQuantity: string) => {
     const quantity = parseFloat(newQuantity);
     if (isNaN(quantity)) return;
@@ -107,7 +105,7 @@ const WhTransferDetails = () => {
   }, [form, transferDetails]);
 
   const { mutate: editTransfer, isPending } = useUpdateTransfer("WHS", id);
-  const { mutate: cancelTransfer, isPending: isClosing } = useCancelTransfer(
+  const { mutate: cancelTransfer, isPending: isCancelling } = useCancelTransfer(
     "WHS",
     id
   );
@@ -129,9 +127,9 @@ const WhTransferDetails = () => {
   return (
     <Form {...form}>
       <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
-        <Loader enable={isPending} />
+        <Loader enable={isPending || isCancelling} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-          <DataRenderer isLoading={isFetching} isError={isError}>
+          <DataRenderer isLoading={isFetching} isError={isError} error={error}>
             <div className="px-6 py-4 flex justify-between  h-[4.5rem] border-b border-Primary-15">
               <div className="flex gap-x-6 items-center">
                 {" "}
@@ -287,7 +285,7 @@ const WhTransferDetails = () => {
                         {transferDetails?.from}
                       </span>
                     </div>
-         
+
                     <FormField
                       control={form.control}
                       name="to"
@@ -447,7 +445,7 @@ const WhTransferDetails = () => {
             {!isEdit ? (
               <>
                 <Button
-                  disabled={isFetching || isClosing}
+                  disabled={isFetching || isCancelling}
                   onClick={() => {
                     setDialogOpen(true);
                     setDialogConfig({

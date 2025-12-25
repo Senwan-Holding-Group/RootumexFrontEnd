@@ -1,6 +1,5 @@
 import DataTable from "@/components/DataTable";
 import Search from "@/components/Search";
-import { useStateContext } from "@/context/useStateContext";
 import { vendorsMenu } from "@/lib/constants";
 import { useTableState } from "@/lib/hooks/useTableState";
 import { Vendor } from "@/lib/types";
@@ -15,7 +14,6 @@ const columns = [
   { header: "Vendor Address", accessor: "vendorAddress", isLastColumn: true },
 ];
 const VendorsTable = () => {
-  const { setError } = useStateContext();
   const navigate = useNavigate();
   const {
     currentPage,
@@ -31,9 +29,8 @@ const VendorsTable = () => {
     data: vendorList,
     isFetching,
     isError,
-  } = useQuery(
-    getVendorsQueryOptions(search, currentPage, setTotalPage, setError)
-  );
+    error,
+  } = useQuery(getVendorsQueryOptions(search, currentPage, setTotalPage));
 
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2 bg-white  border border-Primary-15 p-4 rounded-2xl">
@@ -47,6 +44,7 @@ const VendorsTable = () => {
           data={vendorList}
           isLoading={isFetching}
           isError={isError}
+          error={error}
           currentPage={currentPage}
           totalPages={totalPage}
           onPageChange={handlePageChange}

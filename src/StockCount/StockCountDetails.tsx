@@ -1,9 +1,9 @@
 import {
-  getStockCountDetailsQueryOptions,
   useCancelStockCount,
   useCloseStockCount,
   useUpdateStockCount,
-} from "@/api/query";
+} from "@/api/mutations";
+import { getStockCountDetailsQueryOptions } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +29,7 @@ import {
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {  useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -37,7 +37,7 @@ import { Link, useParams } from "react-router-dom";
 
 const StockCountDetails = () => {
   const { id } = useParams();
-  const { setError, setDialogConfig, setDialogOpen } = useStateContext();
+  const { setDialogConfig, setDialogOpen } = useStateContext();
   const [docLine, setdocLine] = useState<StockCount["lines"][0][]>([]);
   const [isEdit, setisEdit] = useState(false);
   const form = useForm<EditStockCountRequest>({
@@ -51,7 +51,8 @@ const StockCountDetails = () => {
     data: stockCountDetails,
     isFetching,
     isError,
-  } = useQuery(getStockCountDetailsQueryOptions(setError, id));
+    error,
+  } = useQuery(getStockCountDetailsQueryOptions(id));
 
   useEffect(() => {
     if (stockCountDetails) {
@@ -112,7 +113,7 @@ const StockCountDetails = () => {
       <div className=" h-[calc(100dvh-6.875rem)] overflow-auto  ">
         <Loader enable={isPending || isCancelling || isClosing} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-          <DataRenderer isLoading={isFetching} isError={isError}>
+          <DataRenderer isLoading={isFetching} isError={isError} error={error}>
             <div className="px-6 py-4 flex gap-x-6 items-center h-[4.5rem] border-b border-Primary-15">
               <Link
                 to={"/rootumex/stock-count"}

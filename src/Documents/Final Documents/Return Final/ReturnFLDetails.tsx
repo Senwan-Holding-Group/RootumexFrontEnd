@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getReturnFLDetails, postReturnFL } from "@/api/client";
+import { useCloseReturnFL } from "@/api/mutations";
+import { getReturnFLDetailsQueryOptions } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import POLayout from "@/components/Printlayout/POLayout";
 import Print from "@/components/Printlayout/Print";
@@ -10,76 +10,39 @@ import { useStateContext } from "@/context/useStateContext";
 import { numberWithCommas } from "@/lib/utils";
 import {
   faChevronLeft,
-  faSquareCheck,
   faSquareExclamation,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 
 const ReturnFLDetails = () => {
   const { id } = useParams();
-  const { setError, setDialogOpen, setDialogConfig } = useStateContext();
-  const queryClient = useQueryClient();
+  const { setDialogOpen, setDialogConfig } = useStateContext();
   const {
     data: returnDetailsFL,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["returnDetailsFL", id],
-    queryFn: () => getReturnFLDetails(`/return/${id}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+    error,
+  } = useQuery(getReturnFLDetailsQueryOptions(id));
+
   const calculateDocumentTotal = useCallback(() => {
     return returnDetailsFL?.poLines?.reduce(
       (sum, line) => sum + (line.total_price || 0),
       0
     );
   }, [returnDetailsFL?.poLines]);
-  const documentTotal = calculateDocumentTotal();
-  const { mutate: closeReturn, isPending: isClosing } = useMutation({
-    mutationFn: () => postReturnFL(`/return/close/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["returnDetailsFL"] });
-      setDialogConfig({
-        title: "Return Closed successfully!",
-        description: "Your Return is successfully closed ",
-        icon: faSquareCheck,
-        iconColor: "text-Success-600",
-        variant: "success",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.message === "Network Error"
-          ? "Network error. Please check your connection."
-          : error.response?.data?.details || "An error occurred";
-      setDialogConfig({
-        title: "Return not updated",
-        description: errorMessage,
-        icon: faSquareExclamation,
-        iconColor: "text-Error-600",
-        variant: "danger",
-        type: "Info",
-        confirm: undefined,
-        confirmText: "OK",
-      });
-      setDialogOpen(true);
-    },
-  });
 
+  const documentTotal = calculateDocumentTotal();
+
+  const { mutate: closeReturn, isPending: isClosing } = useCloseReturnFL(id);
   return (
     <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
       <Loader enable={isClosing} />
       <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-        <DataRenderer isLoading={isFetching} isError={isError}>
+        <DataRenderer isLoading={isFetching} isError={isError} error={error}>
           <div className="px-6 py-4 flex justify-between  h-[4.5rem] border-b border-Primary-15">
             <div className="flex gap-x-6 items-center">
               <Link
@@ -94,11 +57,11 @@ const ReturnFLDetails = () => {
                 {returnDetailsFL?.code}
               </span>
             </div>
-              <Print btnText={"return"}>
-                {returnDetailsFL && (
-                  <POLayout data={returnDetailsFL} type="ReturnFL" />
-                )}
-              </Print>
+            <Print btnText={"return"}>
+              {returnDetailsFL && (
+                <POLayout data={returnDetailsFL} type="ReturnFL" />
+              )}
+            </Print>
           </div>
           <div className="flex-1 w-full overflow-scroll p-4 flex flex-col gap-y-10 ">
             <div className="space-y-4 min-w-[80rem]">

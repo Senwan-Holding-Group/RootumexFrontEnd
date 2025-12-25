@@ -12,9 +12,8 @@ import { Button } from "./ui/button";
 import { itemsMenu } from "@/lib/constants";
 import { Docline, Item } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useStateContext } from "@/context/useStateContext";
 import DataRenderer from "./DataRenderer";
-import { getItemsMasterData } from "@/api/client";
+import { fetchAll } from "@/api/client";
 import Search from "./Search";
 import { faGrid2Plus } from "@fortawesome/pro-regular-svg-icons";
 import { useTableState } from "@/lib/hooks/useTableState";
@@ -25,7 +24,6 @@ type ItemSelectProps = {
 };
 
 const ItemSelect = ({ setState, state }: ItemSelectProps) => {
-  const { setError } = useStateContext();
   const { search, setSearch } = useTableState({
     initialSearchKey: itemsMenu[0].value,
   });
@@ -74,6 +72,7 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
     hasNextPage,
     isFetching,
     isError,
+    error,
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: ["itemSelectList", search.searchValue],
@@ -81,7 +80,7 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
       const searchParam = search.searchValue
         ? `?${search.searchKey}=${search.searchValue}&page=${pageParam}&limit=10`
         : `?page=${pageParam}&limit=10`;
-      return getItemsMasterData(`/item${searchParam}`, setError);
+      return fetchAll<Item>(`/item${searchParam}`);
     },
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.length === 10 ? allPages.length + 1 : undefined;
@@ -122,7 +121,7 @@ const ItemSelect = ({ setState, state }: ItemSelectProps) => {
           <div className="border w-full overflow-scroll h-full  border-Secondary-500 rounded-lg">
             <DataRenderer
               isLoading={!isFetchingNextPage && isFetching}
-              isError={isError}>
+              isError={isError} error={error}>
               <table className="w-full ">
                 <thead className="bg-Primary-15">
                   <tr className="text-nowrap   text-base  text-left font-bold text-Primary-500">

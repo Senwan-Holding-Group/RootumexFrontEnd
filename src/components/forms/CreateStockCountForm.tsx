@@ -34,7 +34,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { format } from "date-fns";
 import { Calendar } from "../calendar";
 import { cn } from "@/lib/utils";
-import { useCreateStockCount } from "@/api/query";
+import { useCreateStockCount } from "@/api/mutations";
 
 const CreateStockCountForm = () => {
   const dependencies = useOutletContext<Dependencies>();
@@ -142,7 +142,7 @@ const CreateStockCountForm = () => {
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
-                        {dependencies?.warehouses.map((whs) => (
+                        {dependencies?.warehouses?.map((whs) => (
                           <SelectItem
                             key={whs.warehouseCode}
                             value={whs.warehouseCode}>

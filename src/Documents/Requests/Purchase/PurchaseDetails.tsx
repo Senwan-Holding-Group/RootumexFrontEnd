@@ -1,8 +1,5 @@
-import {
-  getPODetailsQueryOptions,
-  useCancelPo,
-  useUpdatePO,
-} from "@/api/query";
+import { useCancelPo, useUpdatePO } from "@/api/mutations";
+import { getPODetailsQueryOptions } from "@/api/query";
 import { Calendar } from "@/components/calendar";
 import DataRenderer from "@/components/DataRenderer";
 import ItemSelect from "@/components/ItemsSelect";
@@ -52,7 +49,7 @@ import { Link, useOutletContext, useParams } from "react-router-dom";
 
 const PurchaseDetails = () => {
   const { id } = useParams();
-  const { setError, setDialogOpen, setDialogConfig } = useStateContext();
+  const { setDialogOpen, setDialogConfig } = useStateContext();
   const dependencies = useOutletContext<Dependencies>();
   const [docLine, setdocLine] = useState<Docline[]>([]);
   const [isEdit, setisEdit] = useState(false);
@@ -70,7 +67,8 @@ const PurchaseDetails = () => {
     data: poDetails,
     isFetching,
     isError,
-  } = useQuery(getPODetailsQueryOptions(setError, id));
+    error,
+  } = useQuery(getPODetailsQueryOptions(id));
 
   const calculateDocumentTotal = useCallback(() => {
     return docLine?.reduce((sum, line) => sum + (line.total_price || 0), 0);
@@ -137,7 +135,7 @@ const PurchaseDetails = () => {
       <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
         <Loader enable={isPending || isClosing} />
         <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-          <DataRenderer isLoading={isFetching} isError={isError}>
+          <DataRenderer isLoading={isFetching} isError={isError} error={error}>
             <div className="px-6 py-4 flex justify-between  h-[4.5rem] border-b border-Primary-15">
               <div className="flex gap-x-6 items-center">
                 <Link
@@ -349,7 +347,7 @@ const PurchaseDetails = () => {
                                 <SelectValue placeholder="Select" />
                               </SelectTrigger>
                               <SelectContent>
-                                {dependencies?.sites.map((whs) => (
+                                {dependencies?.sites?.map((whs) => (
                                   <SelectItem
                                     key={whs.warehouseCode}
                                     value={whs.warehouseCode}>

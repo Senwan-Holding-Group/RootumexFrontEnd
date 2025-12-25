@@ -7,16 +7,17 @@ import {
 
 import { Input } from "./ui/input";
 import { MenuList } from "@/lib/types";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { TSearch } from "@/lib/hooks/useTableState";
 type searchProps = {
   menuList: MenuList[];
-  search: { searchKey: string; searchValue: string };
-  setSearch: React.Dispatch<
-    React.SetStateAction<{
-      searchKey: string;
-      searchValue: string;
-    }>
-  >;
+  search: TSearch;
+  setSearch: React.Dispatch<React.SetStateAction<TSearch>>;
 };
 const Search = ({ menuList, setSearch, search }: searchProps) => {
   return (
@@ -57,8 +58,7 @@ const Search = ({ menuList, setSearch, search }: searchProps) => {
                 setSearch({ ...search, searchKey: item.value });
               }}
               key={item.value}
-              className="border-b last:border-b-0 font-normal hover:bg-geantSap-gray-25 text-base leading-[22.4px] text-geantSap-black border-geantSap-gray-100 cursor-pointer"
-            >
+              className="border-b last:border-b-0 font-normal hover:bg-geantSap-gray-25 text-base leading-[22.4px] text-geantSap-black border-geantSap-gray-100 cursor-pointer">
               {item.label}
             </DropdownMenuItem>
           ))}

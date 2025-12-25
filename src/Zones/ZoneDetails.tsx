@@ -1,7 +1,5 @@
 import { useAuth } from "@/api/Auth/useAuth";
-import { getZoneDetails } from "@/api/client";
 import DataRenderer from "@/components/DataRenderer";
-import { useStateContext } from "@/context/useStateContext";
 import { ZoneItem } from "@/lib/types";
 import {
   faChevronDown,
@@ -11,12 +9,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
+import ZoneItemCard from "./ZoneItemCard";
+import { getZoneItemsQueryOptions } from "@/api/query";
 
 const ZoneDetails = () => {
   const { zoneId } = useParams();
-  const{user}=useAuth()
+  const { user } = useAuth();
   const { search } = useOutletContext<{ search: string }>();
-  const { setError } = useStateContext();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     {}
   );
@@ -26,18 +25,14 @@ const ZoneDetails = () => {
       ...prev,
       [zoneCode]: !prev[zoneCode],
     }));
+    console.log(expandedItems);
   };
   const {
     data: zoneItems,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["zoneItems", zoneId || search],
-    queryFn: () => getZoneDetails(`/mobile/zone/${zoneId || search}`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    enabled: !!(zoneId || search),
-  });
+    error,
+  } = useQuery(getZoneItemsQueryOptions(zoneId, search));
 
   const groupItemsByZone = () => {
     if (!zoneItems || zoneItems.length === 0) return [];
@@ -61,16 +56,16 @@ const ZoneDetails = () => {
       const uniqueZoneCodes = [
         ...new Set(zoneItems.map((item) => item.zone_code)),
       ];
-      
+
       uniqueZoneCodes.forEach((zoneCode, index) => {
         initialExpandedState[`zone_${zoneCode}_${index}`] = true;
       });
       setExpandedItems(initialExpandedState);
     }
-  }, [zoneItems]);  
+  }, [zoneItems]);
   return (
     <div className=" h-[calc(100dvh-12rem)] ">
-      <DataRenderer isLoading={isFetching} isError={isError}>
+      <DataRenderer isLoading={isFetching} isError={isError} error={error}>
         <div className="space-y-4 overflow-y-scroll h-full">
           <div className="h-16 border-b flex gap-x-6 items-center border-Primary-5 p-4">
             <Link
@@ -82,7 +77,7 @@ const ZoneDetails = () => {
               />
             </Link>
             <h1 className="text-2xl text-RT-Black font-bold leading-CS">
-            {user.warehouse_code}
+              {user.warehouse_code}
             </h1>
           </div>
           <div className="space-y-4">
@@ -96,7 +91,9 @@ const ZoneDetails = () => {
               groupItemsByZone().map(([zoneCode, items], zoneIndex) => {
                 const uniqueId = `zone_${zoneCode}_${zoneIndex}`;
                 return (
-                  <div key={uniqueId} className="border-2 px-4 py-2 rounded-CS border-Secondary-500">
+                  <div
+                    key={uniqueId}
+                    className="border-2 px-4 py-2 rounded-CS border-Secondary-500">
                     <div
                       onClick={() => toggleExpand(uniqueId)}
                       className="h-14 px-2 border-b-2 border-Primary-5   flex justify-between items-center cursor-pointer">
@@ -120,23 +117,10 @@ const ZoneDetails = () => {
                         <div
                           key={`${uniqueId}_item_${itemIndex}`}
                           className="  border-b-2  border-Secondary-500">
-                          <div className="space-y-4 h-[4.75rem] px-2 py-2  text-base font-medium leading-CS text-RT-Black">
-                            <h1>{item.item_code +"-"+ item.item_name }</h1>
-                            <div className="flex gap-x-14    text-Gray-500">
-                              <div className="flex">
-                                <span>Qty:&nbsp;</span>
-                                <span>{item.quantity}</span>
-                              </div>
-                              <div className="flex">
-                                <span>UOM:&nbsp;</span>
-                                <span>{item.uom_code}</span>
-                              </div>
-                              <div className="flex">
-                                <span>UOM group:&nbsp;</span>
-                                <span>{item.uom_group}</span>
-                              </div>
-                            </div>
-                          </div>
+                          <ZoneItemCard
+                            item={item}
+                            key={`${uniqueId}_itemCard_${itemIndex}`}
+                          />
                         </div>
                       ))}
                     </div>

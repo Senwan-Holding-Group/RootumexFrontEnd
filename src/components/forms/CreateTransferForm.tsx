@@ -40,7 +40,7 @@ import ItemSelect from "../ItemsSelect";
 import { DialogClose } from "../ui/dialog";
 import { TransferProps } from "@/Documents/Requests/Warehouse Transfer/CreateTransfer";
 import { useAuth } from "@/api/Auth/useAuth";
-import { useCreateTransfer } from "@/api/query";
+import { useCreateTransfer } from "@/api/mutations";
 
 const CreateTransferForm = ({ type }: TransferProps) => {
   const { user } = useAuth();
@@ -226,14 +226,14 @@ const CreateTransferForm = ({ type }: TransferProps) => {
                         </SelectTrigger>
                         <SelectContent>
                           {type === "SITE"
-                            ? dependencies?.sites.map((whs) => (
+                            ? dependencies?.sites?.map((whs) => (
                                 <SelectItem
                                   key={whs.warehouseCode}
                                   value={whs.warehouseCode}>
                                   {whs.warehouseName + "-" + whs.warehouseCode}
                                 </SelectItem>
                               ))
-                            : dependencies?.warehouses.map((whs) => (
+                            : dependencies?.warehouses?.map((whs) => (
                                 <SelectItem
                                   key={whs.warehouseCode}
                                   value={whs.warehouseCode}>

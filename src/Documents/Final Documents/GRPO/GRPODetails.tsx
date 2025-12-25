@@ -1,4 +1,5 @@
-import { getGRPODetailsQueryOptions, useCloseGRPO } from "@/api/query";
+import { useCloseGRPO } from "@/api/mutations";
+import { getGRPODetailsQueryOptions } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
 import POLayout from "@/components/Printlayout/POLayout";
 import Print from "@/components/Printlayout/Print";
@@ -19,12 +20,13 @@ import { Link, useParams } from "react-router-dom";
 
 const GRPODetails = () => {
   const { id } = useParams();
-  const { setError, setDialogOpen, setDialogConfig } = useStateContext();
+  const { setDialogOpen, setDialogConfig } = useStateContext();
   const {
     data: grpoDetails,
     isFetching,
     isError,
-  } = useQuery(getGRPODetailsQueryOptions(setError, id));
+    error,
+  } = useQuery(getGRPODetailsQueryOptions(id));
 
   const { mutate: closeGRPO, isPending: isClosing } = useCloseGRPO(id);
 
@@ -39,7 +41,7 @@ const GRPODetails = () => {
     <div className=" h-[calc(100dvh-12.25rem)] overflow-auto  ">
       <Loader enable={isClosing} />
       <div className=" h-full bg-white border border-Primary-15 rounded-CS flex flex-col justify-between">
-        <DataRenderer isLoading={isFetching} isError={isError}>
+        <DataRenderer isLoading={isFetching} isError={isError} error={error}>
           <div className="px-6 py-4 flex justify-between  h-[4.5rem] border-b border-Primary-15">
             <div className="flex gap-x-6 items-center">
               <Link

@@ -1,7 +1,6 @@
 import { useAuth } from "@/api/Auth/useAuth";
-import { getZoneDashboard } from "@/api/client";
+import { getZoneDashboardQueryOptions } from "@/api/query";
 import DataRenderer from "@/components/DataRenderer";
-import { useStateContext } from "@/context/useStateContext";
 import {
   faBasketShopping,
   faClock,
@@ -13,23 +12,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQuery } from "@tanstack/react-query";
 
 const ZoneDashboard = () => {
-  const { setError } = useStateContext();
-  const {user}=useAuth()
+  const { user } = useAuth();
 
   const {
-    data: zoneDashBoardList,
+    data: zoneDashBoard,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["zoneDashBoardList"],
-    queryFn: () => getZoneDashboard(`/zone/dashboard`, setError),
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  });
+    error,
+  } = useQuery(getZoneDashboardQueryOptions());
 
   return (
     <div className=" h-[calc(100dvh-12rem)] ">
-      <DataRenderer isLoading={isFetching} isError={isError}>
+      <DataRenderer isLoading={isFetching} isError={isError} error={error}>
         <div className="space-y-8 overflow-y-scroll h-full">
           <div className="h-16 border-b border-Primary-5 p-4">
             <h1 className="text-2xl text-RT-Black font-bold leading-CS">
@@ -42,7 +36,7 @@ const ZoneDashboard = () => {
                 Full Zones
               </h1>
               <p className="text-[2.5rem] leading-CS  flex justify-between">
-                {zoneDashBoardList?.full_zones}
+                {zoneDashBoard?.full_zones}
                 <span className="rounded-full bg-Primary-50 size-12 flex items-center justify-center">
                   <FontAwesomeIcon
                     className="w-[1.25rem] text-Primary-300 h-[1.063rem]"
@@ -56,7 +50,7 @@ const ZoneDashboard = () => {
                 Total Zones{" "}
               </h1>
               <p className="text-[2.5rem] leading-CS flex justify-between">
-                {zoneDashBoardList?.total_zones}
+                {zoneDashBoard?.total_zones}
                 <span className="rounded-full bg-Primary-50 size-12 flex items-center justify-center">
                   <FontAwesomeIcon
                     className="w-[1.25rem] text-Primary-300 h-[1.063rem]"
@@ -70,7 +64,7 @@ const ZoneDashboard = () => {
                 Total items
               </h1>
               <p className="text-[2.5rem] leading-CS  flex justify-between">
-                {zoneDashBoardList?.total_items}
+                {zoneDashBoard?.total_items}
                 <span className="rounded-full bg-Primary-50 size-12 flex items-center justify-center">
                   <FontAwesomeIcon
                     className="w-[1.25rem] text-Primary-300 h-[1.063rem]"
@@ -84,7 +78,7 @@ const ZoneDashboard = () => {
                 Idle Zones
               </h1>
               <p className="text-[2.5rem] leading-CS  flex justify-between">
-                {zoneDashBoardList?.idle_zones}
+                {zoneDashBoard?.idle_zones}
                 <span className="rounded-full bg-Primary-50 size-12 flex items-center justify-center">
                   <FontAwesomeIcon
                     className="w-[1.25rem] text-Primary-300 h-[1.063rem]"
@@ -98,7 +92,7 @@ const ZoneDashboard = () => {
                 Flagged Zones
               </h1>
               <p className="text-[2.5rem] leading-CS  flex justify-between">
-                {zoneDashBoardList?.flagged_zones}
+                {zoneDashBoard?.flagged_zones}
                 <span className="rounded-full bg-Primary-50 size-12 flex items-center justify-center">
                   <FontAwesomeIcon
                     className="w-[1.25rem] text-Primary-300 h-[1.063rem]"

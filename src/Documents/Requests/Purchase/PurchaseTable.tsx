@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Search from "@/components/Search";
 import StatusBadge from "@/components/StatusBadge";
-import { useStateContext } from "@/context/useStateContext";
 import { purschaseMenu } from "@/lib/constants";
 import { numberWithCommas } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -10,35 +8,34 @@ import CreatePO from "./CreatePO";
 import { format } from "date-fns";
 import { useTableState } from "@/lib/hooks/useTableState";
 import DataTable from "@/components/DataTable";
-import { PO } from "@/lib/types";
+import {  PO } from "@/lib/types";
 import { getPOQueryOptions } from "@/api/query";
 const columns = [
   { header: "Code", accessor: "code", isFirstColumn: true },
   {
     header: "Status",
     accessor: "status",
-    render: (item: any) => <StatusBadge status={item.status} />,
+    render: (item: PO) => <StatusBadge status={item.status} />,
   },
   { header: "Vendor", accessor: "vendorName" },
   {
     header: "Document date",
     accessor: "docDate",
-    render: (item: any) => format(item.docDate, "yyyy-MM-dd"),
+    render: (item: PO) => format(item.docDate, "yyyy-MM-dd"),
   },
   {
     header: "Delivery date",
     accessor: "docDueDate",
-    render: (item: any) => format(item.docDueDate, "yyyy-MM-dd"),
+    render: (item: PO) => format(item.docDueDate, "yyyy-MM-dd"),
   },
   {
     header: "Total amount",
     accessor: "total",
-    render: (item: any) => numberWithCommas(item.total),
+    render: (item: PO) => numberWithCommas(item.total),
     isLastColumn: true,
   },
 ];
 const PurchaseTable = () => {
-  const { setError } = useStateContext();
   const navigate = useNavigate();
   const {
     currentPage,
@@ -55,7 +52,8 @@ const PurchaseTable = () => {
     data: poList,
     isFetching,
     isError,
-  } = useQuery(getPOQueryOptions(search, currentPage, setTotalPage, setError));
+    error
+  } = useQuery(getPOQueryOptions(search, currentPage, setTotalPage));
 
   return (
     <div className="max-w-full overflow-hidden h-full space-y-2  bg-white  border border-Primary-15  p-4 rounded-2xl">
@@ -71,6 +69,7 @@ const PurchaseTable = () => {
         <DataTable
           columns={columns}
           data={poList}
+          error={error}
           isLoading={isFetching}
           isError={isError}
           currentPage={currentPage}

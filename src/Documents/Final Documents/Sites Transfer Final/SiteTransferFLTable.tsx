@@ -2,7 +2,6 @@ import { getTransferFLQueryOptions } from "@/api/query";
 import DataTable from "@/components/DataTable";
 import Search from "@/components/Search";
 import StatusBadge from "@/components/StatusBadge";
-import { useStateContext } from "@/context/useStateContext";
 import { siteTransferFinalMenu } from "@/lib/constants";
 import { useTableState } from "@/lib/hooks/useTableState";
 import { WhsTransfer } from "@/lib/types";
@@ -34,7 +33,6 @@ const columns = [
   },
 ];
 const SiteTransferFLTable = () => {
-  const { setError } = useStateContext();
   const navigate = useNavigate();
   const {
     currentPage,
@@ -50,14 +48,9 @@ const SiteTransferFLTable = () => {
     data: siteTransferListFL,
     isFetching,
     isError,
+    error,
   } = useQuery(
-    getTransferFLQueryOptions(
-      search,
-      currentPage,
-      setTotalPage,
-      setError,
-      "SITE"
-    )
+    getTransferFLQueryOptions(search, currentPage, setTotalPage, "SITE")
   );
 
   return (
@@ -75,6 +68,7 @@ const SiteTransferFLTable = () => {
           data={siteTransferListFL}
           isLoading={isFetching}
           isError={isError}
+          error={error}
           currentPage={currentPage}
           totalPages={totalPage}
           onPageChange={handlePageChange}

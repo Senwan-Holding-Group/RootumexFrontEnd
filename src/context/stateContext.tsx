@@ -11,8 +11,6 @@ type DialogConfig = {
   confirmText: string;
 };
 export type StateContextType = {
-  error: string | undefined;
-  setError: React.Dispatch<React.SetStateAction<string | undefined>>;
   dialogOpen: boolean;
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   dialogConfig: DialogConfig;
